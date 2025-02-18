@@ -1,0 +1,100 @@
+
+/*
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0. If a copy of the MPL was not distributed with this
+# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+@import url(./ui-base.css);
+@import url(./ui-color.css);
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+h2:before {
+    content: '▶ ';
+    /* background-image: url('../img/icon.png');
+    background-size: 20px 20px;
+    position:absolute;
+    width:20px;
+    height:20px;
+    margin-left:-30px; */
+}
+td, th {
+    padding: 0.2rem 1rem;
+}
+th {
+    border-bottom: #777 solid 2px;
+}
+tr {
+    border-bottom: #777 dotted 1px;
+}
+
+textarea {
+    width: 100%;
+}
+
+.w100 {
+    width: 100%;
+}
+
+.nowrap {
+    white-space: nowrap;
+}
+
+
+
+/**
+ * ==========================================
+ * Copied from treestyletab by piroor
+ * @see https://github.com/piroor/treestyletab/
+ * ==========================================
+ **/
+
+/*
+body {
+    background: var(--in-content-box-background);
+    color: var(--text-color);
+}
+*/
+@media (prefers-color-scheme: dark) {
+    body {
+        background: var(--in-content-box-background);
+        color: var(--text-color);
+    }
+}
+
+body {
+    background: var(--bg-color);
+    box-sizing: border-box;
+    color: var(--text-color);
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+    font: caption;
+    margin: 0;
+    padding: 1em 1em 100%;
+    user-select: none;
+    -moz-user-select: none;
+}
+
+pre, code {
+    font-size: 0.8rem;
+    background: var(--in-content-button-background-mixed);
+    border: 1px solid var(--in-content-border-hover-mixed);
+    color: var(--in-content-text-color);
+}
+pre {
+    padding: 0 0.4rem;
+}
+
+.label-highlight:hover {
+    animation: blinker 0.2s steps(1) infinite;
+    cursor: pointer;
+}
+
+@keyframes blinker {
+    50% { opacity: 0.5; }
+}

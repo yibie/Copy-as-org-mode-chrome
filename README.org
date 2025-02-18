@@ -7,6 +7,14 @@ And I'm add some new features for Chrome version:
 - Add Save Page as Org-Mode to context menu.
   - This will save the current page as an Org-mode file and save it to the a directory that you can choose.
 
+* Installation
+
+1. Download the zip file from [[https://github.com/yibie/Copy-as-org-mode-chrome][Copy as Org-Mode for Chrome]]. 
+   - You can also clone the repository and build it by yourself.
+2. Unzip the file and open Chrome.
+3. Click the extension icon in the Chrome toolbar.
+4. Click "Load unpacked" and select the unzipped folder.
+
 * Acknowedgement
   This project referred, forked, or used some parts of the codes from the other projects:
 
@@ -19,4 +27,3 @@ And I'm add some new features for Chrome version:
 
 * License
 MPL-2.0.
-

@@ -31,7 +31,6 @@ Desktop.ini
 *.pem
 
 # Build output
-dist/
 build/
 web-ext-artifacts/
 
