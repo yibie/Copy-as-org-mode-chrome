@@ -1,0 +1,44 @@
+{
+  "name": "copy-as-org-mode",
+  "version": "0.1.1",
+  "description": "Copy selected text as Org-Mode format",
+  "main": "dist/index.js",
+  "dependencies": {
+    "@mozilla/readability": "^0.5.0",
+    "tippy.js": "^6.3.7",
+    "url": "^0.11.0"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.246",
+    "@types/node": "^16.10.1",
+    "@types/node-fetch": "^2.6.1",
+    "copy-webpack-plugin": "^11.0.0",
+    "css-loader": "^6.8.1",
+    "file-loader": "^6.2.0",
+    "html-loader": "^4.2.0",
+    "html-webpack-plugin": "^5.5.3",
+    "pug": "^2.0.4",
+    "pug-html-loader": "^1.1.5",
+    "pug-loader": "^2.4.0",
+    "raw-loader": "^4.0.2",
+    "style-loader": "^3.3.3",
+    "stylus": "^0.54.5",
+    "stylus-loader": "^3.0.2",
+    "ts-loader": "^9.4.4",
+    "ts-node": "^10.7.0",
+    "typescript": "^4.4.3",
+    "web-ext-types": "^3.2.1",
+    "webpack": "^5.0.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "scripts": {
+    "build": "webpack --mode=production",
+    "dev": "webpack --mode=development --watch",
+    "clean": "rm -rf dist/*"
+  },
+  "keywords": [
+    "webextension"
+  ],
+  "author": "ono ono (kuanyui)",
+  "license": "MPL-2.0"
+}

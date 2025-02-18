@@ -1,0 +1,56 @@
+{
+    "manifest_version": 3,
+    "name": "Copy as Org-Mode",
+    "version": "0.2.0",
+    "description": "Copy selection or links as Org-mode format text.",
+    "icons": {
+        "256": "img/icon.png"
+    },
+    "action": {
+        "default_icon": "img/icon.png",
+        "default_title": "Copy as Org-mode"
+    },
+    "options_ui": {
+        "page": "dist/options_ui.html",
+        "open_in_tab": false
+    },
+    "background": {
+        "service_worker": "dist/background.js",
+        "type": "module"
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "img/*.png"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ],
+    "permissions": [
+        "activeTab",
+        "clipboardWrite",
+        "contextMenus",
+        "storage",
+        "notifications",
+        "scripting",
+        "downloads"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "content_scripts": [
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "dist/content-script.js",
+                "dist/copy.js",
+                "dist/copy-link.js"
+            ],
+            "run_at": "document_end"
+        }
+    ]
+}

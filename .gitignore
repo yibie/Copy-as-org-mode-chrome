@@ -1,0 +1,43 @@
+# Node.js
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+
+# IDE - VSCode
+.vscode/
+*.code-workspace
+
+# IDE - JetBrains
+.idea/
+*.iml
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+*~
+
+# Chrome Extension
+*.crx
+*.pem
+
+# Build output
+dist/
+build/
+web-ext-artifacts/
+
+# Logs
+*.log
+
+# Temporary files
+tmp/
+temp/ 

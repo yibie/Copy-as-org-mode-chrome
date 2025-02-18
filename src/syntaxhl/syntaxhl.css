@@ -1,0 +1,47 @@
+.syntaxhl-wrapper {
+    position: relative;
+    background: hsl(220, 16%, 14%);
+}
+
+.syntaxhl-renderer, .syntaxhl-editor {
+    padding: 6px;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    white-space: pre-wrap;
+    font-family: monospace;
+    font-size: 0.8rem;
+}
+
+.syntaxhl-editor {
+    /* THE OVERLAYING CONTENTEDITABLE WITH TRANSPARENT TEXT */
+    position: relative;
+    -webkit-text-fill-color: transparent; /* make text transparent */
+    text-fill-color: transparent; /* One day, hopefully? */
+    cursor: text;
+    /* color: hsl(100, 95%, 95%); // But keep caret colored */
+}
+.syntaxhl-editor:focus {
+    outline: 1px solid hsl(220, 16%, 19%);
+}
+
+/* THE UNDERLAYING ONE WITH HIGHLIGHT COLORS */
+.syntaxhl-renderer {
+    position: absolute;
+    user-select: none;
+    pointer-events: none;
+}
+
+.syntaxhl-renderer i {
+    font-style: normal;
+}
+
+/* JS */
+.syntaxhl-wrapper .template_blkh { display: inline-block; background-color: #1f5b87; color: #ffffff; }
+.syntaxhl-wrapper .template_hr {  color: #777777; }
+.syntaxhl-wrapper .template_comt { color: #777777; }
+.syntaxhl-wrapper .template_outl { color: #ff8722; font-weight: bold; }
+.syntaxhl-wrapper .template_link { color: #5fafd7; }
+.syntaxhl-wrapper .template_rplc { color: #ff4ea3; }
+.syntaxhl-wrapper .template_time { color: #ff4ea3; }

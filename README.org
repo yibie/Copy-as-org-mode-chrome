@@ -1,0 +1,22 @@
+* Copy as Org-Mode for Chrome
+
+This WebExtension is a Chrome version of Firefox extension: [[https://addons.mozilla.org/en-US/firefox/addon/copy-as-org-mode/][Copy as Org-Mode for Firefox]], which is developed by [[https://github.com/kuanyui][kuanyui]].
+
+And I'm add some new features for Chrome version:
+
+- Add Save Page as Org-Mode to context menu.
+  - This will save the current page as an Org-mode file and save it to the a directory that you can choose.
+
+* Acknowedgement
+  This project referred, forked, or used some parts of the codes from the other projects:
+
+| Project URL                                                                             | Usage                                               | Licenses of Used Parts |
+|-----------------------------------------------------------------------------------------+-----------------------------------------------------+------------------------|
+| [[https://github.com/0x6b/copy-selection-as-markdown][0x6b/copy-selection-as-markdown]] | Main project structure; copy and selection handling | MIT                    |
+| [[https://github.com/mixmark-io/turndown][mixmark-io/turndown]]                         | Forked as HTML to Org-Mode converter                | MIT                    |
+| [[https://github.com/piroor/treestyletab/][piroor/treestyletab]]                        | The CSS for ~options_ui~ (settings page)            | MPL 2.0; MIT           |
+
+
+* License
+MPL-2.0.
+

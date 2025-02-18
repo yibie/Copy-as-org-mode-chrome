@@ -1,0 +1,144 @@
+//
+   Copyright (c) 2021 ono ono (kuanyui)
+   All rights reserved.
+
+   This project is released under  Mozilla Public License, v. 2.0 (MPL-2.0). Each
+   file under this directory is licensed under MPL-2.0 by default, if the file
+   includes no license information.
+
+   If a copy of the MPL was not distributed with this file, You can obtain one at
+   https://mozilla.org/MPL/2.0/.
+
+   You may not remove or alter the substance of any license notices (including
+   copyright notices, patent notices, disclaimers of warranty, or limitations of
+   liability) contained within the Source Code Form of the Covered Software, except
+   that You may alter any license notices to the extent required to remedy known
+   factual inaccuracies. (Cited from MPL - 2.0, chapter 3.3)
+
+mixin tablerow_checkbox(id)
+  tr.row
+    td(colspan="100%")
+      label(for=id)
+        input(id=id type='checkbox')
+        block
+
+//-  {1: 'one', 2: 'two', 3: 'three'}
+mixin tablerow_select(id, optsObj={})
+  tr.row
+    td
+      label(for=id)
+      block
+    td
+      select(id=id type='checkbox')
+        each text, key in optsObj
+          option(value=key)= text
+
+mixin tablerow_1_column(id, label)
+  tr.row
+    td
+      label(for=id)= label
+      block
+
+mixin line_radio(radioGroupName, value)
+  div
+    label
+      input(type='radio' name=radioGroupName value=value)
+      block
+
+doctype html
+html
+  head
+    meta(charset='utf-8')
+    link(rel="stylesheet" type="text/css" href="./options_ui_style/options_ui.css")
+    link(rel="stylesheet" type="text/css" href="./options_ui_style/syntaxhl.css")
+  form
+    div
+      h2 General
+      div (Note) Shortcut for copying the link of the current page or selection is #[code Ctrl+Alt+O].
+      h2 List Syntax
+      table
+        +tablerow_select('listIndentSize', {'2': '2', '4': '4' })
+          span= "Indent size of nested list item (<li>)"
+        +tablerow_select('ulBulletChar', {'-': '- unordered item', '+': '+ unordered item' })
+          span= "Mark for unordered list (<ul>)"
+        +tablerow_select('olBulletChar', {'.': '1. ordered item', ')': '1) ordered item' })
+          span= "Mark for ordered list (<ol>)"
+      h2 Inline Syntax
+      table
+        +tablerow_select('codeChar', {'=': '=code=', '~': '~code~' })
+          span= "Mark for inline code (<code>)"
+
+      h2 Block Syntax
+      table
+        - var fieldId = 'codeBlockStyle'
+        tr
+          td(rowspan="2"): label(for=fieldId)= "Style of code block"
+          td: input(type='radio' name=fieldId value="beginEnd" id="codeBlockStyle__begin")
+          td
+            label(for='codeBlockStyle__begin')
+              pre.
+                #+begin_src
+                const foo = 42
+                function bar() { return foo }
+                #+end_src
+        tr
+          td: input(type='radio' name=fieldId value="colon" id="codeBlockStyle__colon")
+          td
+            label(for='codeBlockStyle__colon')
+              pre.
+                : const foo = 42
+                : function bar() { return foo }
+        tr
+      h2 Links
+      table
+        +tablerow_checkbox('decodeUri')
+          span use #[code decodeURI()] to process URL in #[code= '<a>'] and #[code= '<img>'] #[#decodeUriExample]
+        +tablerow_select('squareBracketsInLink', {'leaveUntouched': "Keep (Don't Handle)", 'omit': 'Omit', 'replaceWithSpaces': 'Replace with spaces','replaceWithRoundBrackets': 'Replace with round brackets "()"' })
+          span Square brackets <code>[]</code> in link text
+      h2 Ruby / Furigana
+      // table
+        +tablerow_select('ruby', {'forceAddParenthesis': 'Force add parenthesis around it', 'keepIfWrappedByRp': 'Keep if wrapped by parenthesis', 'removeRuby': 'Remove all' })
+          span= "How to handle ruby tag (<ruby>)"
+      div How to handle ruby tag (#[code='<ruby>']), for example, #[ruby #[rb 林檎] #[rt りんご]]:
+      +line_radio('rubyHandleMethod', 'removeRuby'): span Remove all: #[code 林檎]
+      +line_radio('rubyHandleMethod', 'keepIfWrappedByRp'): span Keep if wrapped by parenthesis:　#[code 林檎] or #[code 林檎(りんご)]
+      +line_radio('rubyHandleMethod', 'forceAddParenthesis'): span Force add parenthesis around it: #[code 林檎(りんご)]
+      h2 Reference Link
+      table
+        +tablerow_checkbox('insertReferenceLink_enabled'): span When copy selection, insert a link to the current page as reference
+        +tablerow_select('insertReferenceLink_pos', {'prepend': 'Prepend', 'append': 'Append' })
+          span= "Insertion position"
+        tr.row
+          td.nowrap: label(for="insertReferenceLink_format")
+            div Reference Format
+            div: u: b Available tokens
+            div: i(style="font-size: 0.7rem;") (move mouse on them for help)
+            ul
+              li: code(title="The title of current page") %title%
+              li: code(title="The URL of current page") %url%
+              li: code(title="Current date. Format is in Org-mode standard timestamp `YYYY-MM-DD W`.") %date%
+              li: code(title="Current date & time. Format is in Org-mode standard `YYYY-MM-DD W HH:mm`.") %datetime%
+          td.w100: div.syntaxhl-editor(id="insertReferenceLink_format" data-lang-id="template" rows='8')
+      h2 Show Notification When Copy
+      +line_radio('notificationMethod', 'inPagePopup'): span In-page notification
+      +line_radio('notificationMethod', 'notificationApi'): span System notification popup (#[b On Linux, this may freeze Firefox sometime], reason is unknown yet and I didn't find any issue about this after DuckDuckGoing.)
+      +line_radio('notificationMethod', 'none'): span Disabled
+        //tr.row: td:
+    //div
+      h2 Advanced
+      label(for='titleSubstitution').
+        Title Substitution -- line separated texts which will be removed from title text (supports #[a(href='https://regex101.com/') regular expressions] if the line starts and ends with / e.g. #[code /^number:\d$/]
+      textarea#titleSubstitution(rows='5')
+      input#embedImage(type='checkbox')
+      label(for='embedImage')
+        | Embed
+        code img
+        | s (.gif, .jpg, .jpeg, .png, and .webp) as base64 text as possible -- images will be encoded as base64 text, instead of URL, and added at the end of copied text.
+        strong
+          | Ask for the permission to access all websites when clicking Save button, since sometimes referenced images are hosted other than current active tab so
+          code activeTab
+          |  permission is not sufficient.
+        |  Unchecking this removes the additional permission.
+    h2 Default Values
+    button(id="resetBtn") Reset to Defaults
+  script(src='./options_ui.js')
