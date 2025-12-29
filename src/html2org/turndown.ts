@@ -87,6 +87,9 @@ export interface Html2OrgOptions {
   br: '  ',
   preformattedCode: false,
   ruby: h2o_ruby_style_t,
+  extractedImages?: { src: string, filename: string }[],
+  saveImages: boolean,
+  imagePathPrefix: string,
   blankReplacement: RuleReplacementFn
   keepReplacement: RuleReplacementFn
   defaultReplacement: RuleReplacementFn
@@ -112,6 +115,8 @@ const DEFAULT_OPTION: Readonly<Html2OrgOptions> = {
   br: '  ',
   preformattedCode: false,
   ruby: 'removeRuby',
+  saveImages: false,
+  imagePathPrefix: '',
   blankReplacement: function (content, node) {
     return node.isBlock ? '\n\n' : ''
   },

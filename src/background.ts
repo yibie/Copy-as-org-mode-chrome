@@ -59,6 +59,15 @@ chrome.runtime.onInstalled.addListener(() => {
       }
     );
 
+    chrome.contextMenus.create(
+      {
+        id: "save-page-as-org-folder",
+        title: "Save Page as Org-Mode (With Images)",
+        contexts: ["page", "frame"],
+        documentUrlPatterns: ["<all_urls>"],
+      }
+    );
+
     chrome.contextMenus.create({
       id: "copy-link-as-org-mode",
       title: "Copy Link as Org-Mode",
@@ -129,6 +138,14 @@ chrome.contextMenus.onClicked.addListener(async (info: chrome.contextMenus.OnCli
   if (info.menuItemId === "save-page-as-org") {
     try {
       await savePageAsOrg(tabId);
+    } catch (err: unknown) {
+      console.error('Failed to execute script:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      showBgNotification('Error', `Failed to process page content: ${errorMessage}`);
+    }
+  } else if (info.menuItemId === "save-page-as-org-folder") {
+    try {
+      await savePageAsOrgFolder(tabId);
     } catch (err: unknown) {
       console.error('Failed to execute script:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -347,6 +364,7 @@ async function savePageAsOrg(tabId: number) {
     });
 
     // 然后执行转换
+    const extractedImages: { src: string, filename: string }[] = [];
     const results = await chrome.scripting.executeScript({
       target: { tabId: tabId },
       func: (options) => {
@@ -360,11 +378,19 @@ async function savePageAsOrg(tabId: number) {
           div.innerHTML = content;
 
           // 使用注入的转换器
-          const orgContent = window.html2org.convert(div.innerHTML, options);
+          // @ts-ignore
+          // @ts-ignore
+          const conversionOptions = {
+            ...options,
+            extractedImages: options.saveImages ? [] : undefined
+          };
+
+          const orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
 
           return {
             title: document.title,
             content: orgContent,
+            extractedImages: conversionOptions.extractedImages || [],
             url: document.URL,
             author: document.querySelector('meta[name="author"]')?.getAttribute('content') || '',
             description: document.querySelector('meta[name="description"]')?.getAttribute('content') || ''
@@ -383,6 +409,15 @@ async function savePageAsOrg(tabId: number) {
         decodeUri: STORAGE.decodeUri,
         squareBracketsInLink: STORAGE.squareBracketsInLink,
         ruby: STORAGE.rubyHandleMethod,
+        saveImages: STORAGE.saveImages,
+        imagePathPrefix: STORAGE.imagePathPrefix,
+        imageSaveSubfolder: STORAGE.imageSaveSubfolder,
+        extractedImages: [] // Initial empty array, will be populated by side-effect in commonmark-rules if we could... 
+        // WAIT, we can't pass reference across context. 
+        // We need to rely on the return value from the function execution in the context.
+        // The `extractedImages` passed here in `args` is serialized and passed to the page context.
+        // The page context code modifies IT.
+        // We need to make sure the modified array is returned back.
       }]
     });
 
@@ -390,7 +425,14 @@ async function savePageAsOrg(tabId: number) {
       throw new Error('Failed to get page content');
     }
 
-    const { title, content, url, author, description } = results[0].result;
+    const { title, content, url, author, description, extractedImages: resultImages } = results[0].result as {
+      title: string,
+      content: string,
+      url: string,
+      author: string,
+      description: string,
+      extractedImages: { src: string, filename: string }[]
+    };
 
     // 构建最终的 org 文件内容
     let finalContent = `#+TITLE: ${title}\n`;
@@ -407,11 +449,32 @@ async function savePageAsOrg(tabId: number) {
     // 使用 data URL
     const dataUrl = 'data:text/org;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(finalContent)));
 
+    const safeTitle = title.replace(/[<>:"/\\|?*]/g, '_').trim();
+    // const folderName = safeTitle; // Removed folder wrapper
+
     await chrome.downloads.download({
       url: dataUrl,
-      filename: `${title.replace(/[<>:"/\\|?*]/g, '_')}.org`,
-      saveAs: true
+      filename: `${safeTitle}.org`,
+      saveAs: true // Let user pick location
     });
+
+    if (STORAGE.saveImages && resultImages && resultImages.length > 0) {
+      const imageSubfolder = STORAGE.imageSaveSubfolder || 'images';
+      for (const img of resultImages) {
+        try {
+          // Determine absolute URL if src is relative
+          const absoluteUrl = new URL(img.src, url).href;
+
+          await chrome.downloads.download({
+            url: absoluteUrl,
+            filename: `${imageSubfolder}/${img.filename}`,
+            saveAs: false
+          });
+        } catch (e) {
+          console.error(`Failed to download image ${img.src}`, e);
+        }
+      }
+    }
 
   } catch (err: unknown) {
     console.error('Failed to save page:', err);
@@ -419,6 +482,124 @@ async function savePageAsOrg(tabId: number) {
     showBgNotification('Error', `Failed to save page: ${errorMessage}`);
   }
 }
+
+async function savePageAsOrgFolder(tabId: number) {
+  try {
+    // 1. Inject content script
+    await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      files: ['dist/content-script.js']
+    });
+
+    // 2. Convert and Extract URLs
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      func: (options) => {
+        try {
+          const article = document.querySelector('article') || document.body;
+          const div = document.createElement('div');
+          div.innerHTML = article.innerHTML;
+
+          // @ts-ignore
+          const conversionOptions = {
+            ...options,
+            extractedImages: [] // Enable extraction
+          };
+
+          const orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+
+          return {
+            title: document.title,
+            content: orgContent,
+            extractedImages: conversionOptions.extractedImages || [],
+            url: document.URL,
+          };
+        } catch (err) {
+          console.error('Error in content script:', err);
+          return null;
+        }
+      },
+      args: [{
+        unorderedListMarker: STORAGE.ulBulletChar,
+        orderedListMarker: STORAGE.olBulletChar,
+        codeDelimiter: STORAGE.codeChar,
+        listIndentSize: STORAGE.listIndentSize,
+        codeBlockStyle: STORAGE.codeBlockStyle,
+        decodeUri: STORAGE.decodeUri,
+        squareBracketsInLink: STORAGE.squareBracketsInLink,
+        ruby: STORAGE.rubyHandleMethod,
+        saveImages: true, // Always save images for this mode
+        imagePathPrefix: STORAGE.imagePathPrefix,
+        // Note: For this mode, imagePathPrefix might usually be ./images/ but user still decides linking style. 
+        // The physical folder structure is fixed to ./images/ by save_folder.ts logic unless we pass it.
+        // Let's assume standard behavior: images in ./images, links use prefix.
+      }]
+    });
+
+    if (!results?.[0]?.result) throw new Error('Failed to get page content');
+
+    const result = results[0].result as any;
+    console.log('[savePageAsOrgFolder] Extracted images:', result.extractedImages);
+
+    // Convert relative URLs to absolute using the page URL
+    const imageUrls = result.extractedImages.map((img: any) => {
+      try {
+        return new URL(img.src, result.url).href;
+      } catch (e) {
+        return img.src; // fallback to original if URL parsing fails
+      }
+    });
+
+    // 3. Fetch Image Blobs (in content script context)
+    let imagesData: { filename: string, base64: string }[] = [];
+    if (imageUrls.length > 0) {
+      showBgNotification('Processing', `Downloading ${imageUrls.length} images...`);
+      const imageResults = await chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        func: async (urls) => {
+          if (window.html2org.fetchImagesAsBase64) {
+            return await window.html2org.fetchImagesAsBase64(urls);
+          }
+          return [];
+        },
+        args: [imageUrls]
+      });
+
+      if (imageResults?.[0]?.result) {
+        const fetchedData = imageResults[0].result as { filename: string, base64: string }[];
+        console.log('[savePageAsOrgFolder] Fetched image data:', fetchedData);
+
+        // Use filenames from extractedImages (matches Org file links), 
+        // but base64 from fetchedData
+        imagesData = result.extractedImages.map((img: any, index: number) => ({
+          filename: img.filename, // Use the filename that matches the Org link
+          base64: fetchedData[index]?.base64 || ''
+        })).filter((img: any) => img.base64); // Filter out failed fetches
+
+        console.log('[savePageAsOrgFolder] Final image data with correct filenames:', imagesData);
+      }
+    }
+
+    // 4. Store Data
+    const dataId = `save_folder_${Date.now()}`;
+    await chrome.storage.local.set({
+      [dataId]: {
+        title: result.title,
+        content: result.content,
+        images: imagesData
+      }
+    });
+
+    // 5. Open Helper Page
+    chrome.tabs.create({ url: `dist/save_folder.html?id=${dataId}` });
+
+  } catch (err: unknown) {
+    console.error('Failed to save page:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    showBgNotification('Error', `Failed to save page: ${errorMessage}`);
+  }
+}
+
 
 function createDebounceFn(fn: () => any, debounceDurationMs: number): () => void {
   let timeoutId: number

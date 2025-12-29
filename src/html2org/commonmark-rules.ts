@@ -69,8 +69,8 @@ let rules = createRulesObject({
     replacement: function (content: string): string {
       // content = content.replace(/^/gm, '  ')  // indentation
       return '\n\n#+begin_quote\n' +
-      content +
-      '\n#+end_quote\n\n'
+        content +
+        '\n#+end_quote\n\n'
     }
   },
   list: {
@@ -155,7 +155,7 @@ let rules = createRulesObject({
       // FIXME: Newlines of textContent are all disappeared in this page: https://kuanyui.github.io/2017/08/16/macros-for-qproperty/
       console.log('取られたコード', textContent, node)
       return (
-        '\n\n#+begin_src'  + langId + '\n' +
+        '\n\n#+begin_src' + langId + '\n' +
         textContent +
         '\n#+end_src\n\n'
       )
@@ -203,10 +203,27 @@ let rules = createRulesObject({
         const child = node.firstChild!
         if (child.nodeName === 'IMG') {
           const img = child as HTMLImageElement
+          let imgSrc = options.decodeUri ? exceptionSafeDecodeURI(img.src) : img.src
+
+          if (options.saveImages && options.extractedImages) {
+            const extension = img.src.split('.').pop()?.split(/[?#]/)[0] || 'png';
+            const filename = `image_${Date.now()}_${options.extractedImages.length}.${extension}`;
+
+            options.extractedImages.push({
+              src: img.src,
+              filename: filename
+            });
+
+            const prefix = options.imagePathPrefix || './images/';
+            imgSrc = prefix + filename;
+          }
+
           if (href === img.src) {
+            if (options.saveImages && options.extractedImages) {
+              return `[[${imgSrc}]]`
+            }
             return `[[${href}]]`
           }
-          const imgSrc = options.decodeUri ? exceptionSafeDecodeURI(img.src) :img.src
           return `[[${href}][${imgSrc}]]`  // Org-mode's canonical syntax for Image + Link
         }
       }
@@ -330,13 +347,28 @@ let rules = createRulesObject({
         src = exceptionSafeDecodeURI(src)
       }
       var title = cleanAttribute(node.getAttribute('title') || '')
+
+      if (options.saveImages && options.extractedImages) {
+        const extension = src.split('.').pop()?.split(/[?#]/)[0] || 'png';
+        const filename = `image_${Date.now()}_${options.extractedImages.length}.${extension}`;
+
+        options.extractedImages.push({
+          src: src,
+          filename: filename
+        });
+
+        const prefix = options.imagePathPrefix || './images/';
+        const newPath = prefix + filename;
+        return `[[${newPath}]]`
+      }
+
       return '[[' + src + ']]'
     }
   }
 })
 
 
-function cleanAttribute (attribute: string): string {
+function cleanAttribute(attribute: string): string {
   return attribute ? attribute.replace(/(\n+\s*)+/g, '\n') : ''
 }
 

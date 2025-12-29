@@ -6,6 +6,19 @@ And I'm add some new features for Chrome version:
 
 - Add Save Page as Org-Mode to context menu.
   - This will save the current page as an Org-mode file and save it to the a directory that you can choose.
+- *NEW:* Add *Save Page as Org-Mode (With Images)* to context menu.
+  - This will save the page as an Org file *with all images downloaded locally*.
+  - Images are saved to an =images/= subfolder next to the Org file.
+  - Image links in the Org file use relative paths (e.g., =[[./images/image_xxx.jpg]]=).
+
+** How to Use "Save Page as Org-Mode (With Images)"
+
+1. Right-click on any webpage.
+2. Select *"Save Page as Org-Mode (With Images)"*.
+3. A new tab will open. Click *"Select Folder & Save"*.
+4. Choose any folder on your computer (e.g., =~/Documents/Notes=).
+5. The browser will ask for permission to edit files in that folder. Click *"Edit"*.
+6. Done! Your =.org= file and =images/= folder are saved together.
 
 * Installation
 

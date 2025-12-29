@@ -67,6 +67,9 @@ export interface CopyAsOrgModeOptions {
     notificationMethod: notification_method_t
     rubyHandleMethod: ruby_tag_handle_method_t
     autoConvertPageUrl: boolean
+    saveImages: boolean
+    imagePathPrefix: string
+    imageSaveSubfolder: string
 }
 
 
@@ -152,7 +155,10 @@ class StorageManager {
             convertImageAsDataUrl: false,
             notificationMethod: 'inPagePopup',
             decodeUri: true,
-            autoConvertPageUrl: false
+            autoConvertPageUrl: false,
+            saveImages: true,
+            imagePathPrefix: '',
+            imageSaveSubfolder: 'images'
         }
     }
     /** Set data object (can be partial) into LocalStorage. */

@@ -103,6 +103,15 @@ html
       +line_radio('rubyHandleMethod', 'removeRuby'): span Remove all: #[code 林檎]
       +line_radio('rubyHandleMethod', 'keepIfWrappedByRp'): span Keep if wrapped by parenthesis:　#[code 林檎] or #[code 林檎(りんご)]
       +line_radio('rubyHandleMethod', 'forceAddParenthesis'): span Force add parenthesis around it: #[code 林檎(りんご)]
+      h2 Images
+      table
+        +tablerow_1_column('imageSaveSubfolder', 'Save Images To (Subfolder)')
+          div: input(id='imageSaveSubfolder' type='text' placeholder='e.g. images')
+          div: span.small-note Images will be saved to this folder inside your "Downloads" directory.
+        +tablerow_1_column('imagePathPrefix', 'Link Images As (Prefix)')
+          div: input(id='imagePathPrefix' type='text' placeholder='e.g. ./images/ or file:~/org/images/')
+          div: span.small-note The path prefix added to image links in the Org file (e.g. [[prefix/image.png]]).
+
       h2 Reference Link
       table
         +tablerow_checkbox('insertReferenceLink_enabled'): span When copy selection, insert a link to the current page as reference

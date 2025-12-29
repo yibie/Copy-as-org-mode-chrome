@@ -31,6 +31,10 @@ const config = {
         'content-script': {
             import: './src/content-script.ts',
             filename: 'content-script.js'
+        },
+        'save_folder': {
+            import: './src/save_folder/save_folder.ts',
+            filename: 'save_folder.js'
         }
     },
     output: {
@@ -90,6 +94,12 @@ const config = {
             template: './src/options_ui/options_ui.pug',
             filename: 'options_ui.html',
             chunks: ['options_ui'],
+            inject: true
+        }),
+        new HtmlWebpackPlugin({
+            template: './src/save_folder/save_folder.pug',
+            filename: 'save_folder.html',
+            chunks: ['save_folder'],
             inject: true
         }),
         //new HtmlWebpackPugPlugin({

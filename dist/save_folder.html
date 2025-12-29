@@ -1,0 +1,6 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Save to Folder</title><style>body { font-family: sans-serif; padding: 20px; text-align: center; }
+      #status { margin-top: 20px; font-weight: bold; }
+      .error { color: red; }
+      .success { color: green; }
+      button { padding: 10px 20px; font-size: 16px; cursor: pointer; }
+      .preview { margin-top: 20px; text-align: left; background: #f0f0f0; padding: 10px; max-height: 200px; overflow: auto; display: none;}</style><script defer="defer" src="save_folder.js"></script></head><body><h1>Save as Org-Mode</h1><p>Click the button below to select a folder. The .org file and images will be saved there.</p><p style="font-size: 0.9em; color: #666;">Note: Your browser will ask for permission to write to the selected folder.</p><button id="selectFolderBtn">Select Folder & Save</button><div id="status"></div><div class="preview" id="log"></div><script src="../dist/save_folder.js"></script></body></html>

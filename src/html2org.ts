@@ -13,6 +13,7 @@ declare global {
     interface Window {
         html2org: {
             convert: (html: string, options: any) => string;
+            fetchImagesAsBase64?: (imageUrls: string[]) => Promise<{ filename: string, base64: string }[]>;
         }
     }
 }
