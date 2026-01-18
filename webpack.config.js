@@ -24,6 +24,10 @@ const config = {
             import: './src/readability.ts',
             filename: 'readability.js'
         },
+        'defuddle': {
+            import: './src/defuddle.ts',
+            filename: 'defuddle.js'
+        },
         'html2org': {
             import: './src/html2org.ts',
             filename: 'html2org.js'

@@ -360,7 +360,7 @@ async function savePageAsOrg(tabId: number) {
     // 先注入内容脚本
     await chrome.scripting.executeScript({
       target: { tabId: tabId },
-      files: ['dist/content-script.js']
+      files: ['dist/defuddle.js', 'dist/content-script.js']
     });
 
     // 然后执行转换
@@ -369,9 +369,31 @@ async function savePageAsOrg(tabId: number) {
       target: { tabId: tabId },
       func: (options) => {
         try {
-          // 获取页面内容
-          const article = document.querySelector('article') || document.body;
-          const content = article.innerHTML;
+          // Use Defuddle to extract content
+          let content = "";
+          let title = document.title;
+          let author = document.querySelector('meta[name="author"]')?.getAttribute('content') || '';
+          let description = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+          
+          if (window.Defuddle) {
+              try {
+                  const defuddle = new window.Defuddle(document);
+                  const article = defuddle.parse();
+                  if (article) {
+                      if (article.content) content = article.content;
+                      if (article.title) title = article.title;
+                      if (article.author) author = article.author;
+                  }
+              } catch (e) {
+                  console.error("Defuddle failed:", e);
+              }
+          }
+
+          if (!content) {
+              // Fallback to simple selection
+              const article = document.querySelector('article') || document.body;
+              content = article.innerHTML;
+          }
 
           // 创建一个临时的 div 来解析内容
           const div = document.createElement('div');
@@ -488,7 +510,7 @@ async function savePageAsOrgFolder(tabId: number) {
     // 1. Inject content script
     await chrome.scripting.executeScript({
       target: { tabId: tabId },
-      files: ['dist/content-script.js']
+      files: ['dist/defuddle.js', 'dist/content-script.js']
     });
 
     // 2. Convert and Extract URLs
@@ -496,9 +518,30 @@ async function savePageAsOrgFolder(tabId: number) {
       target: { tabId: tabId },
       func: (options) => {
         try {
-          const article = document.querySelector('article') || document.body;
+          // Use Defuddle to extract content
+          let content = "";
+          let title = document.title;
+          
+          if (window.Defuddle) {
+              try {
+                  const defuddle = new window.Defuddle(document);
+                  const article = defuddle.parse();
+                  if (article) {
+                      if (article.content) content = article.content;
+                      if (article.title) title = article.title;
+                  }
+              } catch (e) {
+                  console.error("Defuddle failed:", e);
+              }
+          }
+
+          if (!content) {
+             const article = document.querySelector('article') || document.body;
+             content = article.innerHTML;
+          }
+
           const div = document.createElement('div');
-          div.innerHTML = article.innerHTML;
+          div.innerHTML = content;
 
           // @ts-ignore
           const conversionOptions = {
@@ -509,7 +552,7 @@ async function savePageAsOrgFolder(tabId: number) {
           const orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
 
           return {
-            title: document.title,
+            title: title, // Use extracted title
             content: orgContent,
             extractedImages: conversionOptions.extractedImages || [],
             url: document.URL,
