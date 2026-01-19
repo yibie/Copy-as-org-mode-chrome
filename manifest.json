@@ -1,7 +1,7 @@
 {
-    "manifest_version": 3,
-    "name": "Copy as Org-Mode",
-    "version": "1.2",
+  "name": "Copy as Org-Mode",
+  "version": "1.3.0",
+  "manifest_version": 3,
     "description": "Copy selection or links as Org-mode format text.",
     "icons": {
         "256": "img/icon.png"
