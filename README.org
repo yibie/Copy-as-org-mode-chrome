@@ -4,10 +4,15 @@ This WebExtension is a Chrome version of Firefox extension: [[https://addons.moz
 
 And I'm add some new features for Chrome version:
 
-- Add Save Page as Org-Mode to context menu.
-  - This will save the current page as an Org-mode file and save it to the a directory that you can choose.
-- *NEW:* Add *Save Page as Org-Mode (With Images)* to context menu.
+- Add *Save Page as Org-Mode* to context menu.
+  - This will save the current page as an Org-mode file. 
+  - Uses *Defuddle* for intelligent content extraction (cleaner than raw HTML).
+  - Includes rich metadata in the header: =#+TITLE=, =#+AUTHOR=, =#+DATE=, =#+SOURCE_URL=, and =#+KEYWORDS=.
+  - Generates an intelligent filename: =Author__Title==keyword1_keyword2.org=.
+  - Images are excluded in this mode for a pure text experience.
+- Add *Save Page as Org-Mode (With Images)* to context menu.
   - This will save the page as an Org file *with all images downloaded locally*.
+  - Uses the same Defuddle extraction logic.
   - Images are saved to an =images/= subfolder next to the Org file.
   - Image links in the Org file use relative paths (e.g., =[[./images/image_xxx.jpg]]=).
 
@@ -19,6 +24,15 @@ And I'm add some new features for Chrome version:
 4. Choose any folder on your computer (e.g., =~/Documents/Notes=).
 5. The browser will ask for permission to edit files in that folder. Click *"Edit"*.
 6. Done! Your =.org= file and =images/= folder are saved together.
+
+*** Special Note for Brave Browser Users
+
+By default, Brave disables the *File System Access API*. To use the direct folder saving feature:
+1. Open =brave://flags= in your address bar.
+2. Search for =File System Access API=.
+3. Set it to **Enabled**.
+4. Relaunch Brave.
+If the API is still unavailable, the extension will automatically fallback to downloading a **ZIP file** containing your Org file and images.
 
 * Installation
 
