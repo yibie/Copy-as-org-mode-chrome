@@ -357,39 +357,65 @@ async function bgCopyToClipboard(text: string, html?: string): Promise<boolean> 
 // 将 Turndown 相关代码移到一个单独的内容脚本中
 async function savePageAsOrg(tabId: number) {
   try {
+    console.log('[savePageAsOrg] Injecting scripts...');
     // 先注入内容脚本
     await chrome.scripting.executeScript({
       target: { tabId: tabId },
       files: ['dist/defuddle.js', 'dist/content-script.js']
     });
+    console.log('[savePageAsOrg] Scripts injected.');
 
     // 然后执行转换
-    const extractedImages: { src: string, filename: string }[] = [];
     const results = await chrome.scripting.executeScript({
       target: { tabId: tabId },
       func: (options) => {
         try {
+          console.log('[content-script] Starting conversion...');
           // Use Defuddle to extract content
           let content = "";
           let title = document.title;
           let author = document.querySelector('meta[name="author"]')?.getAttribute('content') || '';
           let description = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+          let site = '';
+          let domain = window.location.hostname;
+          let published = '';
+          let keywords = document.querySelector('meta[name="keywords"]')?.getAttribute('content') || '';
           
           if (window.Defuddle) {
+              console.log('[content-script] Defuddle found, attempting parse...');
               try {
                   const defuddle = new window.Defuddle(document);
                   const article = defuddle.parse();
                   if (article) {
+                      console.log('[content-script] Defuddle success:', article);
                       if (article.content) content = article.content;
                       if (article.title) title = article.title;
                       if (article.author) author = article.author;
+                      if (article.description) description = article.description;
+                      if (article.site) site = article.site;
+                      if (article.domain) domain = article.domain;
+                      if (article.published) published = article.published;
+                      
+                      if (article.metaTags) {
+                          const meta: any = article.metaTags;
+                          const tags = meta.keywords || meta.news_keywords || meta.tags;
+                          if (tags) {
+                              keywords = Array.isArray(tags) ? tags.join(',') : tags;
+                          }
+                      }
+                  } else {
+                      console.warn('[content-script] Defuddle returned null article');
                   }
               } catch (e) {
-                  console.error("Defuddle failed:", e);
+                  const msg = e instanceof Error ? e.message : String(e);
+                  console.error("[content-script] Defuddle failed:", e);
               }
+          } else {
+              console.warn('[content-script] window.Defuddle is undefined!');
           }
 
           if (!content) {
+              console.log('[content-script] Fallback to simple extraction');
               // Fallback to simple selection
               const article = document.querySelector('article') || document.body;
               content = article.innerHTML;
@@ -399,23 +425,58 @@ async function savePageAsOrg(tabId: number) {
           const div = document.createElement('div');
           div.innerHTML = content;
 
+          // Aggressively remove title-like headers from the beginning
+          const titleText = title.trim().toLowerCase();
+          // Use live collection or loop carefully. Let's just check the first element repeatedly up to a limit.
+          // Or strictly check first few children.
+          let attempts = 0;
+          while (div.firstElementChild && attempts < 3) {
+              const el = div.firstElementChild;
+              if (/^H[1-6]$/.test(el.tagName) || el.tagName === 'DIV' || el.tagName === 'P' || el.tagName === 'HEADER') {
+                   const elText = el.textContent?.trim().toLowerCase() || '';
+                   if (elText.length > 5 && (titleText.includes(elText) || elText.includes(titleText))) {
+                       el.remove();
+                       attempts++;
+                       continue; // Check the next first element
+                   }
+              }
+              break; // Stop if the first element doesn't match
+          }
+
           // 使用注入的转换器
           // @ts-ignore
           // @ts-ignore
           const conversionOptions = {
             ...options,
-            extractedImages: options.saveImages ? [] : undefined
+            saveImages: false, // Force disable images for single file mode
+            extractedImages: undefined
           };
 
-          const orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+          let orgContent = "";
+          try {
+              console.log('[content-script] Converting to Org...');
+              orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+              console.log('[content-script] Conversion success.');
+          } catch (e) {
+              console.error('[content-script] Conversion failed:', e);
+              // If Defuddle content failed, try fallback to raw content
+              console.log('[content-script] Retrying with raw body content...');
+              const rawArticle = document.querySelector('article') || document.body;
+              div.innerHTML = rawArticle.innerHTML;
+              orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+          }
 
           return {
-            title: document.title,
+            title,
             content: orgContent,
-            extractedImages: conversionOptions.extractedImages || [],
+            extractedImages: [],
             url: document.URL,
-            author: document.querySelector('meta[name="author"]')?.getAttribute('content') || '',
-            description: document.querySelector('meta[name="description"]')?.getAttribute('content') || ''
+            author,
+            description,
+            site,
+            domain,
+            published,
+            keywords
           };
         } catch (err) {
           console.error('Error in content script:', err);
@@ -431,15 +492,10 @@ async function savePageAsOrg(tabId: number) {
         decodeUri: STORAGE.decodeUri,
         squareBracketsInLink: STORAGE.squareBracketsInLink,
         ruby: STORAGE.rubyHandleMethod,
-        saveImages: STORAGE.saveImages,
+        saveImages: false, // Force false here too
         imagePathPrefix: STORAGE.imagePathPrefix,
         imageSaveSubfolder: STORAGE.imageSaveSubfolder,
-        extractedImages: [] // Initial empty array, will be populated by side-effect in commonmark-rules if we could... 
-        // WAIT, we can't pass reference across context. 
-        // We need to rely on the return value from the function execution in the context.
-        // The `extractedImages` passed here in `args` is serialized and passed to the page context.
-        // The page context code modifies IT.
-        // We need to make sure the modified array is returned back.
+        extractedImages: [] 
       }]
     });
 
@@ -447,12 +503,20 @@ async function savePageAsOrg(tabId: number) {
       throw new Error('Failed to get page content');
     }
 
-    const { title, content, url, author, description, extractedImages: resultImages } = results[0].result as {
+    const { 
+        title, content, url, author, description, 
+        site, domain, published, keywords,
+        extractedImages: resultImages 
+    } = results[0].result as {
       title: string,
       content: string,
       url: string,
       author: string,
       description: string,
+      site: string,
+      domain: string,
+      published: string,
+      keywords: string,
       extractedImages: { src: string, filename: string }[]
     };
 
@@ -460,43 +524,47 @@ async function savePageAsOrg(tabId: number) {
     let finalContent = `#+TITLE: ${title}\n`;
     finalContent += `#+DATE: ${new Date().toISOString()}\n`;
     if (author) finalContent += `#+AUTHOR: ${author}\n`;
-    finalContent += `#+SOURCE_URL: ${url}\n\n`;
+    finalContent += `#+SOURCE_URL: ${url}\n`;
 
-    if (description) {
-      finalContent += `* Abstract\n\n${description}\n\n`;
+    let keywordList: string[] = [];
+    if (keywords) {
+        keywordList = keywords.split(/,\s*/).filter(k => k.trim());
+        if (keywordList.length > 0) {
+             finalContent += `#+KEYWORDS: ${keywordList.join(', ')}\n`;
+        }
     }
 
-    finalContent += `* Content\n\n${content}`;
+    finalContent += `\n${content}`;
 
     // 使用 data URL
     const dataUrl = 'data:text/org;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(finalContent)));
 
-    const safeTitle = title.replace(/[<>:"/\\|?*]/g, '_').trim();
-    // const folderName = safeTitle; // Removed folder wrapper
+    const sanitize = (s: string) => s.replace(/[<>:"/\\|?*#\x00-\x1F]/g, '').replace(/\s+/g, ' ').trim();
+    const cleanComponent = (s: string) => sanitize(s).replace(/__/g, ' ').replace(/==/g, ' ').trim();
+
+    const safeTitle = cleanComponent(title);
+    const safeAuthor = author ? cleanComponent(author) : '';
+    const safeKeywords = keywordList.map(cleanComponent).slice(0, 5).join('_');
+
+    let filename = '';
+    if (safeAuthor) {
+        filename += `${safeAuthor}__`;
+    }
+    filename += safeTitle;
+    if (safeKeywords) {
+        filename += `==${safeKeywords}`;
+    }
+    filename += `.org`;
+
+    if (filename === '.org') filename = 'captured_content.org';
 
     await chrome.downloads.download({
       url: dataUrl,
-      filename: `${safeTitle}.org`,
+      filename: filename,
       saveAs: true // Let user pick location
     });
 
-    if (STORAGE.saveImages && resultImages && resultImages.length > 0) {
-      const imageSubfolder = STORAGE.imageSaveSubfolder || 'images';
-      for (const img of resultImages) {
-        try {
-          // Determine absolute URL if src is relative
-          const absoluteUrl = new URL(img.src, url).href;
-
-          await chrome.downloads.download({
-            url: absoluteUrl,
-            filename: `${imageSubfolder}/${img.filename}`,
-            saveAs: false
-          });
-        } catch (e) {
-          console.error(`Failed to download image ${img.src}`, e);
-        }
-      }
-    }
+    // Images download block removed
 
   } catch (err: unknown) {
     console.error('Failed to save page:', err);
@@ -521,17 +589,41 @@ async function savePageAsOrgFolder(tabId: number) {
           // Use Defuddle to extract content
           let content = "";
           let title = document.title;
+          let author = document.querySelector('meta[name="author"]')?.getAttribute('content') || '';
+          let description = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+          let site = '';
+          let domain = window.location.hostname;
+          let published = '';
+          let keywords = document.querySelector('meta[name="keywords"]')?.getAttribute('content') || '';
           
           if (window.Defuddle) {
+              console.log('[content-script] Defuddle found, attempting parse...');
               try {
                   const defuddle = new window.Defuddle(document);
                   const article = defuddle.parse();
                   if (article) {
+                      console.log('[content-script] Defuddle success:', article);
                       if (article.content) content = article.content;
                       if (article.title) title = article.title;
+                      if (article.author) author = article.author;
+                      if (article.description) description = article.description;
+                      if (article.site) site = article.site;
+                      if (article.domain) domain = article.domain;
+                      if (article.published) published = article.published;
+                      
+                      if (article.metaTags) {
+                          const meta: any = article.metaTags;
+                          const tags = meta.keywords || meta.news_keywords || meta.tags;
+                          if (tags) {
+                              keywords = Array.isArray(tags) ? tags.join(',') : tags;
+                          }
+                      }
+                  } else {
+                      console.warn('[content-script] Defuddle returned null article');
                   }
               } catch (e) {
-                  console.error("Defuddle failed:", e);
+                  const msg = e instanceof Error ? e.message : String(e);
+                  console.error("[content-script] Defuddle failed:", e);
               }
           }
 
@@ -543,19 +635,49 @@ async function savePageAsOrgFolder(tabId: number) {
           const div = document.createElement('div');
           div.innerHTML = content;
 
+          // Aggressively remove title-like headers from the beginning
+          const titleText = title.trim().toLowerCase();
+          let attempts = 0;
+          while (div.firstElementChild && attempts < 3) {
+              const el = div.firstElementChild;
+              if (/^H[1-6]$/.test(el.tagName) || el.tagName === 'DIV' || el.tagName === 'P' || el.tagName === 'HEADER') {
+                   const elText = el.textContent?.trim().toLowerCase() || '';
+                   if (elText.length > 5 && (titleText.includes(elText) || elText.includes(titleText))) {
+                       el.remove();
+                       attempts++;
+                       continue;
+                   }
+              }
+              break;
+          }
+
           // @ts-ignore
           const conversionOptions = {
             ...options,
             extractedImages: [] // Enable extraction
           };
 
-          const orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+          let orgContent = "";
+          try {
+              orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+          } catch (e) {
+              console.error('[content-script] Conversion failed:', e);
+              const rawArticle = document.querySelector('article') || document.body;
+              div.innerHTML = rawArticle.innerHTML;
+              orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+          }
 
           return {
-            title: title, // Use extracted title
+            title,
             content: orgContent,
             extractedImages: conversionOptions.extractedImages || [],
             url: document.URL,
+            author,
+            description,
+            site,
+            domain,
+            published,
+            keywords
           };
         } catch (err) {
           console.error('Error in content script:', err);
@@ -573,15 +695,24 @@ async function savePageAsOrgFolder(tabId: number) {
         ruby: STORAGE.rubyHandleMethod,
         saveImages: true, // Always save images for this mode
         imagePathPrefix: STORAGE.imagePathPrefix,
-        // Note: For this mode, imagePathPrefix might usually be ./images/ but user still decides linking style. 
-        // The physical folder structure is fixed to ./images/ by save_folder.ts logic unless we pass it.
-        // Let's assume standard behavior: images in ./images, links use prefix.
       }]
     });
 
     if (!results?.[0]?.result) throw new Error('Failed to get page content');
 
-    const result = results[0].result as any;
+    const result = results[0].result as {
+      title: string,
+      content: string,
+      url: string,
+      author: string,
+      description: string,
+      site: string,
+      domain: string,
+      published: string,
+      keywords: string,
+      extractedImages: { src: string, filename: string }[]
+    };
+    
     console.log('[savePageAsOrgFolder] Extracted images:', result.extractedImages);
 
     // Convert relative URLs to absolute using the page URL
@@ -596,45 +727,89 @@ async function savePageAsOrgFolder(tabId: number) {
     // 3. Fetch Image Blobs (in content script context)
     let imagesData: { filename: string, base64: string }[] = [];
     if (imageUrls.length > 0) {
-      showBgNotification('Processing', `Downloading ${imageUrls.length} images...`);
-      const imageResults = await chrome.scripting.executeScript({
-        target: { tabId: tabId },
-        func: async (urls) => {
-          if (window.html2org.fetchImagesAsBase64) {
-            return await window.html2org.fetchImagesAsBase64(urls);
+      // showBgNotification('Processing', `Downloading ${imageUrls.length} images...`); // Removed to avoid confusion
+      try {
+          const imageResults = await chrome.scripting.executeScript({
+            target: { tabId: tabId },
+            func: async (urls) => {
+              if (window.html2org.fetchImagesAsBase64) {
+                return await window.html2org.fetchImagesAsBase64(urls);
+              }
+              return [];
+            },
+            args: [imageUrls]
+          });
+
+          if (imageResults?.[0]?.result) {
+            const fetchedData = imageResults[0].result as { filename: string, base64: string }[];
+            console.log('[savePageAsOrgFolder] Fetched image data:', fetchedData);
+
+            imagesData = result.extractedImages.map((img: any, index: number) => ({
+              filename: img.filename,
+              base64: fetchedData[index]?.base64 || ''
+            })).filter((img: any) => img.base64);
+
+            console.log('[savePageAsOrgFolder] Final image data with correct filenames:', imagesData);
           }
-          return [];
-        },
-        args: [imageUrls]
-      });
-
-      if (imageResults?.[0]?.result) {
-        const fetchedData = imageResults[0].result as { filename: string, base64: string }[];
-        console.log('[savePageAsOrgFolder] Fetched image data:', fetchedData);
-
-        // Use filenames from extractedImages (matches Org file links), 
-        // but base64 from fetchedData
-        imagesData = result.extractedImages.map((img: any, index: number) => ({
-          filename: img.filename, // Use the filename that matches the Org link
-          base64: fetchedData[index]?.base64 || ''
-        })).filter((img: any) => img.base64); // Filter out failed fetches
-
-        console.log('[savePageAsOrgFolder] Final image data with correct filenames:', imagesData);
+      } catch (e) {
+          console.error("Failed to fetch images", e);
+          showBgNotification('Warning', 'Failed to download images. Saving text only.');
+          imagesData = [];
       }
     }
 
-    // 4. Store Data
-    const dataId = `save_folder_${Date.now()}`;
-    await chrome.storage.local.set({
-      [dataId]: {
-        title: result.title,
-        content: result.content,
-        images: imagesData
-      }
-    });
+    // 4. Prepare Metadata and Filename
+    let finalContent = `#+TITLE: ${result.title}\n`;
+    finalContent += `#+DATE: ${new Date().toISOString()}\n`;
+    if (result.author) finalContent += `#+AUTHOR: ${result.author}\n`;
+    finalContent += `#+SOURCE_URL: ${result.url}\n`;
 
-    // 5. Open Helper Page
-    chrome.tabs.create({ url: `dist/save_folder.html?id=${dataId}` });
+    let keywordList: string[] = [];
+    if (result.keywords) {
+        keywordList = result.keywords.split(/,\s*/).filter(k => k.trim());
+        if (keywordList.length > 0) {
+             finalContent += `#+KEYWORDS: ${keywordList.join(', ')}\n`;
+        }
+    }
+
+    finalContent += `\n${result.content}`;
+
+    const sanitize = (s: string) => s.replace(/[<>:"/\\|?*#\x00-\x1F]/g, '').replace(/\s+/g, ' ').trim();
+    const cleanComponent = (s: string) => sanitize(s).replace(/__/g, ' ').replace(/==/g, ' ').trim();
+
+    const safeTitle = cleanComponent(result.title);
+    const safeAuthor = result.author ? cleanComponent(result.author) : '';
+    const safeKeywords = keywordList.map(cleanComponent).slice(0, 5).join('_');
+
+    let filename = '';
+    if (safeAuthor) {
+        filename += `${safeAuthor}__`;
+    }
+    filename += safeTitle;
+    if (safeKeywords) {
+        filename += `==${safeKeywords}`;
+    }
+    filename += `.org`;
+
+    if (filename === '.org') filename = 'captured_content.org';
+
+    // 5. Store Data
+    const dataId = `save_folder_${Date.now()}`;
+    const storageData = {
+        title: result.title,
+        filename: filename,
+        content: finalContent,
+        images: imagesData
+    };
+
+    try {
+        await chrome.storage.local.set({ [dataId]: storageData });
+        // 6. Open Helper Page
+        chrome.tabs.create({ url: `dist/save_folder.html?id=${dataId}` });
+    } catch (e: any) {
+        console.error("Storage set failed", e);
+        showBgNotification('Error', `Failed to prepare data (likely too large): ${e.message}`);
+    }
 
   } catch (err: unknown) {
     console.error('Failed to save page:', err);

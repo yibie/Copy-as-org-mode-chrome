@@ -341,6 +341,10 @@ let rules = createRulesObject({
     filter: 'img',
     // TODO: alt & title
     replacement: function (content: string, node, options) {
+      if (!options.saveImages) {
+          return '';
+      }
+
       var alt = cleanAttribute(node.getAttribute('alt') || '')
       var src = node.getAttribute('src') || ''
       if (options.decodeUri) {
