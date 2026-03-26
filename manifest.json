@@ -18,6 +18,11 @@
         "service_worker": "dist/background.js",
         "type": "module"
     },
+    "commands": {
+        "copy-selection-as-org-mode": {
+            "description": "Copy Selection as Org-Mode"
+        }
+    },
     "web_accessible_resources": [
         {
             "resources": [

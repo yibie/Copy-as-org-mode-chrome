@@ -124,6 +124,21 @@ async function canExecuteScript(tabId: number): Promise<boolean> {
   }
 }
 
+async function copySelectionAsOrgMode(tabId: number): Promise<void> {
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    files: ["dist/copy.js"]
+  });
+
+  await chrome.scripting.executeScript({
+    target: { tabId },
+    func: () => {
+      // @ts-ignore (main is defined in copy.js)
+      return window.main();
+    }
+  });
+}
+
 // 修改处理函数
 chrome.contextMenus.onClicked.addListener(async (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) => {
   if (!tab?.id) return;
@@ -171,19 +186,7 @@ chrome.contextMenus.onClicked.addListener(async (info: chrome.contextMenus.OnCli
     }
   } else if (info.menuItemId === "copy-selection-as-org-mode") {
     try {
-      // 先注入脚本
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        files: ["dist/copy.js"]
-      });
-      // 执行复制函数
-      await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        func: () => {
-          // @ts-ignore (main 会在 copy.js 中定义)
-          return window.main();  // 直接调用 main 函数
-        }
-      });
+      await copySelectionAsOrgMode(tabId);
     } catch (err) {
       console.error('Failed to copy selection:', err);
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
@@ -220,6 +223,27 @@ chrome.contextMenus.onClicked.addListener(async (info: chrome.contextMenus.OnCli
     }
   }
 })
+
+chrome.commands.onCommand.addListener(async (command) => {
+  if (command !== "copy-selection-as-org-mode") {
+    return;
+  }
+
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    if (!tab?.id) {
+      throw new Error('No active tab found');
+    }
+    if (!await canExecuteScript(tab.id)) {
+      throw new Error('Cannot execute script on this page');
+    }
+    await copySelectionAsOrgMode(tab.id);
+  } catch (err) {
+    console.error('Failed to copy selection via command:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    showBgNotification('Error', `Failed to copy selection: ${errorMessage}`);
+  }
+});
 
 chrome.action.onClicked.addListener((tab) => {
   console.log('[DEBUG] browserAction.onclicked', tab)
@@ -828,4 +852,3 @@ function createDebounceFn(fn: () => any, debounceDurationMs: number): () => void
     }, debounceDurationMs)
   }
 }
-

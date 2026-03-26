@@ -42,6 +42,10 @@ If the API is still unavailable, the extension will automatically fallback to do
 3. Click the extension icon in the Chrome toolbar.
 4. Click "Load unpacked" and select the unzipped folder.
 
+* Keyboard Shortcut
+
+This extension now exposes a =copy-selection-as-org-mode= command, so you can assign a keyboard shortcut from the browser's extension shortcut settings page.
+
 * Acknowedgement
   This project referred, forked, or used some parts of the codes from the other projects:
 
