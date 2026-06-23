@@ -39,4 +39,6 @@ web-ext-artifacts/
 
 # Temporary files
 tmp/
-temp/ *.zip
+temp/
+*.zip
+.pi/
