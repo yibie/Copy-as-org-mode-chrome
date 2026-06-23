@@ -39,4 +39,4 @@ web-ext-artifacts/
 
 # Temporary files
 tmp/
-temp/ 
+temp/ *.zip

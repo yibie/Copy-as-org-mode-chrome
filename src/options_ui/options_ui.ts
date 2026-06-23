@@ -110,6 +110,7 @@ async function loadFromLocalStorage() {
     setRadioValue('rubyHandleMethod', d.rubyHandleMethod)
     setCheckboxValue('decodeUri', d.decodeUri)
     setSelectValue('squareBracketsInLink', d.squareBracketsInLink)
+    q<HTMLInputElement>('defuddleLanguage').value = d.defuddleLanguage || ''
 
 }
 
@@ -135,6 +136,7 @@ async function saveFormToLocalStorage() {
         rubyHandleMethod: getRadioValue('rubyHandleMethod') as any,
         decodeUri: getCheckboxValue('decodeUri'),
         squareBracketsInLink: getSelectValue('squareBracketsInLink') as any,
+        defuddleLanguage: q<HTMLInputElement>('defuddleLanguage').value,
     })
 }
 

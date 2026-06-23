@@ -55,6 +55,11 @@ html
     div
       h2 General
       div (Note) Shortcut for copying the link of the current page or selection is #[code Ctrl+Alt+O].
+      h3 Page Extraction
+      table
+        +tablerow_1_column('defuddleLanguage', 'Language for Transcriptions & Extraction')
+          div: input#defuddleLanguage(type='text' placeholder='e.g. zh-Hans, en, fr...')
+          div: span.small-note Preferred language for site-specific extractors (YouTube subtitles, podcast transcripts, etc.). Leave empty for auto-detection.
       h2 List Syntax
       table
         +tablerow_select('listIndentSize', {'2': '2', '4': '4' })

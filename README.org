@@ -2,19 +2,48 @@
 
 This WebExtension is a Chrome version of Firefox extension: [[https://addons.mozilla.org/en-US/firefox/addon/copy-as-org-mode/][Copy as Org-Mode for Firefox]], which is developed by [[https://github.com/kuanyui][kuanyui]].
 
-And I'm add some new features for Chrome version:
+** Key Features
 
-- Add *Save Page as Org-Mode* to context menu.
-  - This will save the current page as an Org-mode file. 
-  - Uses *Defuddle* for intelligent content extraction (cleaner than raw HTML).
-  - Includes rich metadata in the header: =#+TITLE=, =#+AUTHOR=, =#+DATE=, =#+SOURCE_URL=, and =#+KEYWORDS=.
-  - Generates an intelligent filename: =Author__Title==keyword1_keyword2.org=.
-  - Images are excluded in this mode for a pure text experience.
-- Add *Save Page as Org-Mode (With Images)* to context menu.
-  - This will save the page as an Org file *with all images downloaded locally*.
-  - Uses the same Defuddle extraction logic.
-  - Images are saved to an =images/= subfolder next to the Org file.
-  - Image links in the Org file use relative paths (e.g., =[[./images/image_xxx.jpg]]=).
+- *Copy Selection* as Org-mode formatted text (keyboard shortcut: =Ctrl+Alt+O=)
+- *Save Page as Org-Mode* — right-click → save entire page as an =.org= file
+- *Save Page with Images* — right-click → saves Org file + downloads all images locally
+- *Copy Link as Org-Mode* — right-click any link → org link =[[url][text]]=
+- *Copy Page URL as Org-Mode Link* — right-click page → =[[url][title]]=
+
+** Intelligent Content Extraction
+
+Powered by [[https://defuddle.md][Defuddle]] v0.19 (26 built-in site-specific extractors):
+
+| Extractor     | What it handles                                                        |
+|---------------+------------------------------------------------------------------------|
+| *YouTube*     | Video title, description, chapter markers, and **full transcript with timestamps** |
+| *Bilibili*    | Chinese video platform content                                         |
+| *Twitter/X*   | Tweets, threads, X Articles                                            |
+| *Reddit*      | Posts + comment tree                                                   |
+| *Hacker News* | Posts + comment tree                                                   |
+| *GitHub*      | README, Issues, PRs                                                    |
+| *Wikipedia*   | Encyclopedia articles                                                  |
+| *Medium*      | Blog posts                                                             |
+| *Substack*    | Newsletter posts                                                       |
+| *NY Times*    | News articles                                                          |
+| *LinkedIn*    | Posts                                                                  |
+| *ChatGPT*     | Conversation threads                                                   |
+| *Claude*      | Conversation threads                                                   |
+| *Gemini*      | Conversation threads                                                   |
+| *Grok*        | Conversation threads                                                   |
+| *Discourse*   | Forum threads                                                          |
+| *Bluesky*     | Social posts                                                           |
+| *Mastodon*    | Social posts                                                           |
+| *Threads*     | Social posts                                                           |
+| + 7 more      | LWN, LeetCode, c2-wiki, Substack, BBCode, etc.                        |
+
+When no extractor matches, Defuddle falls back to its auto-detection algorithm — same smart content extraction as Readability, but cleaner.
+
+** User Configurable
+
+- *Page Extraction Language* — set a preferred BCP 47 language code (e.g. =zh-Hans=, =en=) in the extension options. Used by YouTube subtitle selection, site extractors, and =Accept-Language= headers.
+- *Notification style* — in-page or system notification.
+- *List/Code/Link syntax* — customize Org-mode output format.
 
 ** How to Use "Save Page as Org-Mode (With Images)"
 
@@ -46,6 +75,23 @@ If the API is still unavailable, the extension will automatically fallback to do
 
 This extension now exposes a =copy-selection-as-org-mode= command, so you can assign a keyboard shortcut from the browser's extension shortcut settings page.
 
+* Changelog
+
+** v1.4.0 (2026-06-23)
+
+- Major Defuddle upgrade: 0.6 → 0.19 with 26 site-specific extractors
+- YouTube transcript extraction (with timestamps, speaker turns, chapters)
+- New options page setting: "Language for Transcriptions & Extraction"
+- All site extractors (Twitter, Reddit, GitHub, HN, Wikipedia, etc.) now active
+- Async extraction pipeline (=parseAsync=) for API-fetched content
+
+** v1.3.0
+
+- Added "Save Page as Org-Mode" with Defuddle-based content extraction
+- Added "Save Page with Images" feature
+- Added rich metadata headers (=#+TITLE=, =#+AUTHOR=, =#+KEYWORDS=, etc.)
+- Intelligent filename generation
+
 * Acknowedgement
   This project referred, forked, or used some parts of the codes from the other projects:
 
@@ -54,7 +100,6 @@ This extension now exposes a =copy-selection-as-org-mode= command, so you can as
 | [[https://github.com/0x6b/copy-selection-as-markdown][0x6b/copy-selection-as-markdown]] | Main project structure; copy and selection handling | MIT                    |
 | [[https://github.com/mixmark-io/turndown][mixmark-io/turndown]]                         | Forked as HTML to Org-Mode converter                | MIT                    |
 | [[https://github.com/piroor/treestyletab/][piroor/treestyletab]]                        | The CSS for ~options_ui~ (settings page)            | MPL 2.0; MIT           |
-
 
 * License
 MPL-2.0.

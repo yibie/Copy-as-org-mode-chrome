@@ -70,6 +70,8 @@ export interface CopyAsOrgModeOptions {
     saveImages: boolean
     imagePathPrefix: string
     imageSaveSubfolder: string
+    /** Preferred language for Defuddle site-specific extractors (BCP 47, e.g. 'zh-Hans', 'en'). Empty = auto detect */
+    defuddleLanguage: string
 }
 
 
@@ -158,7 +160,8 @@ class StorageManager {
             autoConvertPageUrl: false,
             saveImages: true,
             imagePathPrefix: '',
-            imageSaveSubfolder: 'images'
+            imageSaveSubfolder: 'images',
+            defuddleLanguage: ''
         }
     }
     /** Set data object (can be partial) into LocalStorage. */

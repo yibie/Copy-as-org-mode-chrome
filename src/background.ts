@@ -392,7 +392,7 @@ async function savePageAsOrg(tabId: number) {
     // 然后执行转换
     const results = await chrome.scripting.executeScript({
       target: { tabId: tabId },
-      func: (options) => {
+      func: async (options) => {
         try {
           console.log('[content-script] Starting conversion...');
           // Use Defuddle to extract content
@@ -408,8 +408,11 @@ async function savePageAsOrg(tabId: number) {
           if (window.Defuddle) {
               console.log('[content-script] Defuddle found, attempting parse...');
               try {
-                  const defuddle = new window.Defuddle(document);
-                  const article = defuddle.parse();
+                  const defuddle = new window.Defuddle(document, {
+                    url: document.URL,
+                    language: options.defuddleLanguage || undefined,
+                  });
+                  const article = await defuddle.parseAsync();
                   if (article) {
                       console.log('[content-script] Defuddle success:', article);
                       if (article.content) content = article.content;
@@ -519,7 +522,8 @@ async function savePageAsOrg(tabId: number) {
         saveImages: false, // Force false here too
         imagePathPrefix: STORAGE.imagePathPrefix,
         imageSaveSubfolder: STORAGE.imageSaveSubfolder,
-        extractedImages: [] 
+        extractedImages: [],
+        defuddleLanguage: STORAGE.defuddleLanguage
       }]
     });
 
@@ -608,7 +612,7 @@ async function savePageAsOrgFolder(tabId: number) {
     // 2. Convert and Extract URLs
     const results = await chrome.scripting.executeScript({
       target: { tabId: tabId },
-      func: (options) => {
+      func: async (options) => {
         try {
           // Use Defuddle to extract content
           let content = "";
@@ -623,8 +627,11 @@ async function savePageAsOrgFolder(tabId: number) {
           if (window.Defuddle) {
               console.log('[content-script] Defuddle found, attempting parse...');
               try {
-                  const defuddle = new window.Defuddle(document);
-                  const article = defuddle.parse();
+                  const defuddle = new window.Defuddle(document, {
+                    url: document.URL,
+                    language: options.defuddleLanguage || undefined,
+                  });
+                  const article = await defuddle.parseAsync();
                   if (article) {
                       console.log('[content-script] Defuddle success:', article);
                       if (article.content) content = article.content;
@@ -719,6 +726,7 @@ async function savePageAsOrgFolder(tabId: number) {
         ruby: STORAGE.rubyHandleMethod,
         saveImages: true, // Always save images for this mode
         imagePathPrefix: STORAGE.imagePathPrefix,
+        defuddleLanguage: STORAGE.defuddleLanguage
       }]
     });
 
