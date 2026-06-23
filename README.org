@@ -1,105 +1,190 @@
-* Copy as Org-Mode for Chrome
+* Copy as Org-Mode — Chrome Extension
 
-This WebExtension is a Chrome version of Firefox extension: [[https://addons.mozilla.org/en-US/firefox/addon/copy-as-org-mode/][Copy as Org-Mode for Firefox]], which is developed by [[https://github.com/kuanyui][kuanyui]].
+Convert web content to [[https://orgmode.org/][Org-mode]] format with one click.  
+A Chrome port of [[https://addons.mozilla.org/en-US/firefox/addon/copy-as-org-mode/][Copy as Org-Mode for Firefox]] by [[https://github.com/kuanyui][kuanyui]].
 
-** Key Features
+** What It Does
 
-- *Copy Selection* as Org-mode formatted text (keyboard shortcut: =Ctrl+Alt+O=)
-- *Save Page as Org-Mode* — right-click → save entire page as an =.org= file
-- *Save Page with Images* — right-click → saves Org file + downloads all images locally
-- *Copy Link as Org-Mode* — right-click any link → org link =[[url][text]]=
-- *Copy Page URL as Org-Mode Link* — right-click page → =[[url][title]]=
+This extension turns any web page into clean [[https://orgmode.org/][Org-mode]] text — the markup
+language used by Emacs Org-mode, [[https://logseq.com/][Logseq]], and many note‑taking tools.
+
+You trigger it from the right‑click context menu. Five operations:
+
+| Menu Item | Action | Output |
+|-----------+--------+--------|
+| *Copy Selection as Org-Mode* | Select text on a page, right‑click → copy | Org-mode formatted text in clipboard |
+| *Save Page as Org-Mode* | Right‑click anywhere on the page | =.org= file downloaded |
+| *Save Page as Org-Mode (With Images)* | Right‑click anywhere on the page | =.org= file + all images saved to a folder |
+| *Copy Link as Org-Mode* | Right‑click a hyperlink | =[[url][text]]= in clipboard |
+| *Copy Page URL as Org-Mode Link* | Right‑click the page background | =[[url][title]]= in clipboard |
+
+A keyboard shortcut (~Ctrl+Alt+O~) is also available for "Copy Selection".
 
 ** Intelligent Content Extraction
 
-Powered by [[https://defuddle.md][Defuddle]] v0.19 (26 built-in site-specific extractors):
+This is the most important feature. When you save a page, the extension does
+*not* dump raw HTML into your Org file. Instead, it uses [[https://defuddle.md][Defuddle]] v0.19 to
+intelligently extract the *real content* — stripping ads, sidebars, comments,
+navigation, and other clutter.
 
-| Extractor     | What it handles                                                        |
-|---------------+------------------------------------------------------------------------|
-| *YouTube*     | Video title, description, chapter markers, and **full transcript with timestamps** |
-| *Bilibili*    | Chinese video platform content                                         |
-| *Twitter/X*   | Tweets, threads, X Articles                                            |
-| *Reddit*      | Posts + comment tree                                                   |
-| *Hacker News* | Posts + comment tree                                                   |
-| *GitHub*      | README, Issues, PRs                                                    |
-| *Wikipedia*   | Encyclopedia articles                                                  |
-| *Medium*      | Blog posts                                                             |
-| *Substack*    | Newsletter posts                                                       |
-| *NY Times*    | News articles                                                          |
-| *LinkedIn*    | Posts                                                                  |
-| *ChatGPT*     | Conversation threads                                                   |
-| *Claude*      | Conversation threads                                                   |
-| *Gemini*      | Conversation threads                                                   |
-| *Grok*        | Conversation threads                                                   |
-| *Discourse*   | Forum threads                                                          |
-| *Bluesky*     | Social posts                                                           |
-| *Mastodon*    | Social posts                                                           |
-| *Threads*     | Social posts                                                           |
-| + 7 more      | LWN, LeetCode, c2-wiki, Substack, BBCode, etc.                        |
+Defuddle goes further than traditional readability tools. It has built‑in
+knowledge of 26+ websites and knows how to pull content from each one
+correctly — including content that isn't even visible on the page.
 
-When no extractor matches, Defuddle falls back to its auto-detection algorithm — same smart content extraction as Readability, but cleaner.
+*** YouTube (the killer feature)
 
-** User Configurable
+When you save a YouTube video page, Defuddle:
 
-- *Page Extraction Language* — set a preferred BCP 47 language code (e.g. =zh-Hans=, =en=) in the extension options. Used by YouTube subtitle selection, site extractors, and =Accept-Language= headers.
-- *Notification style* — in-page or system notification.
-- *List/Code/Link syntax* — customize Org-mode output format.
+1. Extracts the video title, description, channel name, and upload date
+2. Embeds an =iframe= of the video in the Org file
+3. **Fetches the full transcript** with timestamps via YouTube's InnerTube API
+4. Groups sentences by speaker turns (auto‑detects ">>" speaker markers)
+5. Adds chapter markers from the video's chapter list
 
-** How to Use "Save Page as Org-Mode (With Images)"
+The transcript appears as structured Org‑mode text below the video embed, with
+timestamp links like:
 
-1. Right-click on any webpage.
-2. Select *"Save Page as Org-Mode (With Images)"*.
-3. A new tab will open. Click *"Select Folder & Save"*.
-4. Choose any folder on your computer (e.g., =~/Documents/Notes=).
-5. The browser will ask for permission to edit files in that folder. Click *"Edit"*.
-6. Done! Your =.org= file and =images/= folder are saved together.
+: **0:12 · Today we're going to talk about...
 
-*** Special Note for Brave Browser Users
+: **5:47 · The first thing we need to understand is...
 
-By default, Brave disables the *File System Access API*. To use the direct folder saving feature:
-1. Open =brave://flags= in your address bar.
-2. Search for =File System Access API=.
-3. Set it to **Enabled**.
-4. Relaunch Brave.
-If the API is still unavailable, the extension will automatically fallback to downloading a **ZIP file** containing your Org file and images.
+The transcript language is configurable (see [[#settings][Settings]] below).
 
-* Installation
+*** Supported site extractors
 
-1. Download the zip file from [[https://github.com/yibie/Copy-as-org-mode-chrome][Copy as Org-Mode for Chrome]]. 
-   - You can also clone the repository and build it by yourself.
-2. Unzip the file and open Chrome.
-3. Click the extension icon in the Chrome toolbar.
-4. Click "Load unpacked" and select the unzipped folder.
+Defuddle has specialized extractors for these sites. When you save one of
+them, you get clean, site‑structured output instead of raw DOM HTML.
 
-* Keyboard Shortcut
+**Video**
+| Site      | What gets extracted                                          |
+|-----------+--------------------------------------------------------------|
+| YouTube   | Title, channel, description, embed, **transcript**, chapters |
+| Bilibili  | Video info, description, comments                             |
 
-This extension now exposes a =copy-selection-as-org-mode= command, so you can assign a keyboard shortcut from the browser's extension shortcut settings page.
+**Conversation / AI Chat**
+| Site     | What gets extracted            |
+|----------+--------------------------------|
+| ChatGPT  | Clean conversation thread      |
+| Claude   | Clean conversation thread      |
+| Gemini   | Clean conversation thread      |
+| Grok     | Clean conversation thread      |
 
-* Changelog
+**Social Media**
+| Site       | What gets extracted                                       |
+|------------+-----------------------------------------------------------|
+| Twitter / X| Tweets with structured metadata, X Articles               |
+| Reddit     | Post + threaded comment tree with depth                   |
+| Hacker News| Post + threaded comment tree                              |
+| LinkedIn   | Posts                                                      |
+| Bluesky    | Posts                                                      |
+| Mastodon   | Posts                                                      |
+| Threads    | Posts                                                      |
 
-** v1.4.0 (2026-06-23)
+**Forums & Discussion**
+| Site       | What gets extracted            |
+|------------+--------------------------------|
+| Discourse  | Clean thread with replies      |
+| LWN.net    | Linux kernel news article      |
 
-- Major Defuddle upgrade: 0.6 → 0.19 with 26 site-specific extractors
-- YouTube transcript extraction (with timestamps, speaker turns, chapters)
-- New options page setting: "Language for Transcriptions & Extraction"
-- All site extractors (Twitter, Reddit, GitHub, HN, Wikipedia, etc.) now active
-- Async extraction pipeline (=parseAsync=) for API-fetched content
+**Articles & Publishing**
+| Site        | What gets extracted            |
++-------------+--------------------------------+
+| Wikipedia   | Full article text               |
+| Medium      | Clean blog post                 |
+| Substack    | Newsletter post                 |
+| NY Times    | News article (behind paywall OK)|
+| GitHub      | README, Issues, PRs             |
+| LeetCode    | Problem description + examples  |
+| C2 Wiki     | Wiki page text                  |
 
-** v1.3.0
+When none of the above match, Defuddle falls back to its general‑purpose
+content extraction algorithm — which is significantly more aggressive at
+removing clutter than Mozilla's Readability. The result is a cleaner, more
+focused Org file in every case.
 
-- Added "Save Page as Org-Mode" with Defuddle-based content extraction
-- Added "Save Page with Images" feature
-- Added rich metadata headers (=#+TITLE=, =#+AUTHOR=, =#+KEYWORDS=, etc.)
-- Intelligent filename generation
+*** "Save Page" output includes
 
-* Acknowedgement
-  This project referred, forked, or used some parts of the codes from the other projects:
+Every saved page includes an Org‑mode header block:
 
-| Project URL                                                                             | Usage                                               | Licenses of Used Parts |
-|-----------------------------------------------------------------------------------------+-----------------------------------------------------+------------------------|
-| [[https://github.com/0x6b/copy-selection-as-markdown][0x6b/copy-selection-as-markdown]] | Main project structure; copy and selection handling | MIT                    |
-| [[https://github.com/mixmark-io/turndown][mixmark-io/turndown]]                         | Forked as HTML to Org-Mode converter                | MIT                    |
-| [[https://github.com/piroor/treestyletab/][piroor/treestyletab]]                        | The CSS for ~options_ui~ (settings page)            | MPL 2.0; MIT           |
+: #+TITLE: Page Title
+: #+DATE: 2026-06-23T...
+: #+AUTHOR: Author Name
+: #+SOURCE_URL: https://...
+: #+KEYWORDS: keyword, tag
 
-* License
-MPL-2.0.
+Plus an intelligently named file:
+
+: Author__Title==keyword1_keyword2.org
+
+** Settings
+
+Open the extension options page (right‑click the extension icon → Options).
+
+| Setting | Description |
+|---------+-------------|
+| *Language for Transcriptions & Extraction* | BCP 47 language code (e.g. =zh-Hans=, =en=, =fr=) used by YouTube to select subtitle tracks and by Defuddle to set =Accept-Language= headers for extractors. Leave empty for automatic detection. |
+| List indent size, bullet style, code style | Customize Org-mode output syntax |
+| Reference link format | Template for source page references (=%title%=, =%url%=, =%date%= tokens) |
+| Notification style | In‑page toast notification vs. system notification |
+| Image path prefix | How image paths are written in the Org file (e.g. =./images/=) |
+
+** How to Save a Page with Images
+
+The "Save Page as Org-Mode (With Images)" option downloads all page images to
+a folder alongside the Org file:
+
+1. Right‑click → *Save Page as Org-Mode (With Images)*
+2. A new tab opens → click *Select Folder & Save*
+3. Pick any folder (e.g. =~/Documents/Notes=)
+4. Grant file‑edit permission when the browser prompts you
+5. Done — the =.org= file creates an =images/= subfolder automatically
+
+*** Brave users
+
+Brave disables the File System Access API by default. To enable it:
+
+: brave://flags → search "File System Access API" → Enabled
+
+If unavailable, the extension falls back to downloading a ZIP file containing
+both the Org file and the images folder.
+
+** Installation
+
+1. Download =copy-as-org-mode-v1.4.0.zip= from the [[https://github.com/yibie/Copy-as-org-mode-chrome/releases][Releases page]].
+2. Unzip it.
+3. Open Chrome → go to =chrome://extensions=.
+4. Enable *Developer mode* (toggle in the top‑right).
+5. Click *Load unpacked* → select the unzipped folder.
+
+Or clone the repo and build:
+
+: git clone https://github.com/yibie/Copy-as-org-mode-chrome
+: cd Copy-as-org-mode-chrome
+: npm install
+: npm run build
+
+Then load the =dist/= directory as an unpacked extension.
+
+** Changelog
+
+| Version | Date | Changes |
+|---------+------+---------|
+| 1.4.0 | 2026-06-23 | Defuddle upgrade 0.6 → 0.19, 26 site extractors (YouTube transcript, Twitter, Reddit, GitHub, HN, ChatGPT, Claude, etc.), language setting for extraction, async API‑fetch pipeline |
+| 1.3.0 | — | Save Page as Org-Mode with Defuddle extraction, image saving, metadata headers, smart filename generation |
+| 1.2.0 | — | Copy selection commands, keyboard shortcuts |
+| 1.1.0 | — | Context menu, options page |
+| 1.0.0 | — | Initial Chrome port |
+
+** Acknowledgements
+
+This project uses code from:
+
+| Project | What for | License |
+|---------+----------+---------|
+| [[https://github.com/0x6b/copy-selection-as-markdown][copy-selection-as-markdown]] | Main structure, copy/selection logic | MIT |
+| [[https://github.com/mixmark-io/turndown][turndown]] | Forked as HTML→Org-mode converter | MIT |
+| [[https://github.com/piroor/treestyletab][Tree Style Tab]] | Settings page CSS | MPL‑2.0 / MIT |
+
+** License
+
+MPL‑2.0. See =LICENSE= for the full text.
