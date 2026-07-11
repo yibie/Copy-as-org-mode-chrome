@@ -39,6 +39,10 @@ const config = {
         'save_folder': {
             import: './src/save_folder/save_folder.ts',
             filename: 'save_folder.js'
+        },
+        'reader': {
+            import: './src/reader/reader.ts',
+            filename: 'reader.js'
         }
     },
     output: {
@@ -139,6 +143,10 @@ const config = {
                 {
                     from: 'img',
                     to: 'img'
+                },
+                {
+                    from: 'src/reader/reader.css',
+                    to: 'reader.css'
                 }
             ]
         }),

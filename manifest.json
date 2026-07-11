@@ -1,6 +1,6 @@
 {
   "name": "Copy as Org-Mode",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "manifest_version": 3,
     "description": "Copy selection or links as Org-mode format text.",
     "icons": {
@@ -21,13 +21,17 @@
     "commands": {
         "copy-selection-as-org-mode": {
             "description": "Copy Selection as Org-Mode"
+        },
+        "toggle-reader-mode": {
+            "description": "Toggle Reader View on the current page"
         }
     },
     "web_accessible_resources": [
         {
             "resources": [
                 "img/*.png",
-                "dist/save_folder.html"
+                "dist/save_folder.html",
+                "dist/reader.css"
             ],
             "matches": [
                 "<all_urls>"

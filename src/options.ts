@@ -72,6 +72,16 @@ export interface CopyAsOrgModeOptions {
     imageSaveSubfolder: string
     /** Preferred language for Defuddle site-specific extractors (BCP 47, e.g. 'zh-Hans', 'en'). Empty = auto detect */
     defuddleLanguage: string
+    /** Reader view color theme */
+    readerTheme: 'auto' | 'light' | 'sepia' | 'dark'
+    /** Reader view font size in px */
+    readerFontSize: number
+    /** Reader view line width in em */
+    readerLineWidth: number
+    /** Reader view line height */
+    readerLineHeight: number
+    /** Reader view font family */
+    readerFontFamily: 'sans-serif' | 'serif'
 }
 
 
@@ -161,7 +171,12 @@ class StorageManager {
             saveImages: true,
             imagePathPrefix: '',
             imageSaveSubfolder: 'images',
-            defuddleLanguage: ''
+            defuddleLanguage: '',
+            readerTheme: 'auto',
+            readerFontSize: 18,
+            readerLineWidth: 42,
+            readerLineHeight: 1.6,
+            readerFontFamily: 'sans-serif'
         }
     }
     /** Set data object (can be partial) into LocalStorage. */

@@ -12,7 +12,7 @@
  * remedy known factual inaccuracies. (Cited from MPL - 2.0, chapter 3.3)
  */
 
-export type my_msg_t = 'showBgNotification' | 'showInPageNotification' | 'copyStringToClipboard'
+export type my_msg_t = 'showBgNotification' | 'showInPageNotification' | 'copyStringToClipboard' | 'toggleReaderMode' | 'savePageAsOrg' | 'savePageAsOrgFolder'
 export interface MyMsg_ShowNotification {
     type: 'showBgNotification' | 'showInPageNotification',
     title: string
@@ -23,9 +23,21 @@ export interface MyMsg_CopyStringToClipboard {
     org: string
     html?: string
 }
+export interface MyMsg_ToggleReaderMode {
+    type: 'toggleReaderMode'
+}
+export interface MyMsg_SavePageAsOrg {
+    type: 'savePageAsOrg'
+}
+export interface MyMsg_SavePageAsOrgFolder {
+    type: 'savePageAsOrgFolder'
+}
 export type MyMsg =
     MyMsg_ShowNotification |
-    MyMsg_CopyStringToClipboard
+    MyMsg_CopyStringToClipboard |
+    MyMsg_ToggleReaderMode |
+    MyMsg_SavePageAsOrg |
+    MyMsg_SavePageAsOrgFolder
 export class msgManager {
     static sendToTab<T extends MyMsg>(tabId: number, msg: T) {
         return chrome.tabs.sendMessage(tabId, msg) as Promise<T | void>

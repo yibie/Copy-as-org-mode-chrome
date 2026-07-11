@@ -88,6 +88,12 @@ chrome.runtime.onInstalled.addListener(() => {
       contexts: ["page"],
       documentUrlPatterns: ["<all_urls>"],
     });
+
+    chrome.contextMenus.create({
+      id: "toggle-reader-mode",
+      title: "Reader View",
+      contexts: ["page"],
+    });
   });
 });
 
@@ -221,27 +227,42 @@ chrome.contextMenus.onClicked.addListener(async (info: chrome.contextMenus.OnCli
       const errorMessage = err instanceof Error ? err.message : 'Unknown error';
       showBgNotification('Error', `Failed to copy link: ${errorMessage}`);
     }
+  } else if (info.menuItemId === "toggle-reader-mode") {
+    try {
+      await toggleReaderMode(tab);
+    } catch (err) {
+      console.error('Failed to toggle reader mode:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      showBgNotification('Error', `Failed to toggle reader mode: ${errorMessage}`);
+    }
   }
 })
 
 chrome.commands.onCommand.addListener(async (command) => {
-  if (command !== "copy-selection-as-org-mode") {
-    return;
-  }
-
-  try {
-    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    if (!tab?.id) {
-      throw new Error('No active tab found');
+  if (command === "copy-selection-as-org-mode") {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      if (!tab?.id) {
+        throw new Error('No active tab found');
+      }
+      if (!await canExecuteScript(tab.id)) {
+        throw new Error('Cannot execute script on this page');
+      }
+      await copySelectionAsOrgMode(tab.id);
+    } catch (err) {
+      console.error('Failed to copy selection via command:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      showBgNotification('Error', `Failed to copy selection: ${errorMessage}`);
     }
-    if (!await canExecuteScript(tab.id)) {
-      throw new Error('Cannot execute script on this page');
+  } else if (command === "toggle-reader-mode") {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      await toggleReaderMode(tab);
+    } catch (err) {
+      console.error('Failed to toggle reader mode via command:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      showBgNotification('Error', `Failed to toggle reader mode: ${errorMessage}`);
     }
-    await copySelectionAsOrgMode(tab.id);
-  } catch (err) {
-    console.error('Failed to copy selection via command:', err);
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    showBgNotification('Error', `Failed to copy selection: ${errorMessage}`);
   }
 });
 
@@ -269,6 +290,14 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
         sendResponse({ success });
       });
       return true; // Keep the message channel open for the async response
+    }
+    case 'savePageAsOrg': {
+      if (sender.tab?.id !== undefined) { savePageAsOrg(sender.tab.id) }
+      break;
+    }
+    case 'savePageAsOrgFolder': {
+      if (sender.tab?.id !== undefined) { savePageAsOrgFolder(sender.tab.id) }
+      break;
     }
   }
 });
@@ -850,6 +879,20 @@ async function savePageAsOrgFolder(tabId: number) {
   }
 }
 
+
+async function toggleReaderMode(tab: chrome.tabs.Tab | undefined): Promise<void> {
+  if (!tab || tab.id === undefined) { return }
+  if (!await canExecuteScript(tab.id)) { return }
+  await chrome.scripting.insertCSS({
+    target: { tabId: tab.id },
+    files: ['dist/reader.css'],
+  })
+  await chrome.scripting.executeScript({
+    target: { tabId: tab.id },
+    files: ['dist/defuddle.js', 'dist/reader.js'],
+  })
+  await msgManager.sendToTab(tab.id, { type: 'toggleReaderMode' })
+}
 
 function createDebounceFn(fn: () => any, debounceDurationMs: number): () => void {
   let timeoutId: number

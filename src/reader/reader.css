@@ -1,0 +1,522 @@
+/* Reader View Styles for copy-as-org-mode */
+
+html.caom-reader-active {
+  --caom-bg: #ffffff;
+  --caom-bg-alt: #f2f2f2;
+  --caom-text: #1a1a1a;
+  --caom-text-muted: #8a8a86;
+  --caom-accent: #4a72b8;
+  --caom-border: #e4e4e0;
+  color-scheme: light;
+}
+
+html.caom-reader-active.caom-theme-light {
+  --caom-bg: #ffffff;
+  --caom-bg-alt: #f2f2f2;
+  --caom-text: #1a1a1a;
+  --caom-text-muted: #8a8a86;
+  --caom-accent: #4a72b8;
+  --caom-border: #e4e4e0;
+  color-scheme: light;
+}
+
+html.caom-reader-active.caom-theme-sepia {
+  --caom-bg: #fffcf0;
+  --caom-bg-alt: #f2f0e5;
+  --caom-text: #100f0f;
+  --caom-text-muted: #6f6e69;
+  --caom-accent: #205ea6;
+  --caom-border: #e6e4d9;
+  color-scheme: light;
+}
+
+html.caom-reader-active.caom-theme-dark {
+  --caom-bg: #1c1b1a;
+  --caom-bg-alt: #282726;
+  --caom-text: #d4d4d4;
+  --caom-text-muted: #878580;
+  --caom-accent: #8caeda;
+  --caom-border: #343331;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  html.caom-reader-active:not(.caom-theme-light):not(.caom-theme-sepia) {
+    --caom-bg: #1c1b1a;
+    --caom-bg-alt: #282726;
+    --caom-text: #d4d4d4;
+    --caom-text-muted: #878580;
+    --caom-accent: #8caeda;
+    --caom-border: #343331;
+    color-scheme: dark;
+  }
+}
+
+html.caom-reader-active body {
+  background: var(--caom-bg) !important;
+  color: var(--caom-text) !important;
+  margin: 0 !important;
+  font-family: var(--caom-font-family, system-ui, -apple-system, sans-serif);
+  font-size: var(--caom-font-size, 18px);
+  line-height: var(--caom-line-height, 1.6);
+}
+
+html.caom-reader-active * {
+  box-sizing: border-box;
+}
+
+html.caom-reader-active .caom-reader-container {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  min-height: 100vh;
+}
+
+html.caom-reader-active .caom-reader-content {
+  grid-column: 2;
+  width: min(var(--caom-line-width, 42em), 92vw);
+  padding: 3rem 1rem 6rem;
+  justify-self: center;
+}
+
+html.caom-reader-active .caom-reader-sidebar {
+  grid-column: 1;
+  padding: 2.6rem 1.5rem 2rem;
+  max-width: 260px;
+}
+
+html.caom-reader-active .caom-reader-sidebar.caom-empty {
+  display: none;
+}
+
+html.caom-reader-active .caom-reader-outline {
+  position: sticky;
+  top: 2rem;
+  max-height: calc(100vh - 4rem);
+  overflow-y: auto;
+  scrollbar-width: none;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+html.caom-reader-active .caom-reader-outline::-webkit-scrollbar {
+  display: none;
+}
+
+html.caom-reader-active .caom-reader-outline a {
+  display: block;
+  padding: 0.25rem 0;
+  padding-left: 0.5rem;
+  color: var(--caom-text-muted);
+  text-decoration: none;
+  font-size: 0.82em;
+  line-height: 1.4;
+  transition: all 0.2s;
+}
+
+html.caom-reader-active .caom-reader-outline a:hover {
+  color: var(--caom-accent);
+}
+
+html.caom-reader-active .caom-reader-outline a.caom-active {
+  color: var(--caom-text);
+  font-weight: 600;
+}
+
+html.caom-reader-active .caom-reader-outline a.caom-outline-title {
+  color: var(--caom-text);
+  font-weight: 600;
+  padding-left: 0.5rem;
+  margin-bottom: 0.35rem;
+}
+
+html.caom-reader-active .caom-reader-outline a.caom-outline-h3 {
+  padding-left: 1rem;
+}
+
+html.caom-reader-active .caom-reader-outline a.caom-outline-h4 {
+  padding-left: 2rem;
+}
+
+html.caom-reader-active .caom-reader-outline a.caom-outline-h5 {
+  padding-left: 3rem;
+}
+
+html.caom-reader-active .caom-reader-outline a.caom-outline-h6 {
+  padding-left: 4rem;
+}
+
+@media (max-width: 900px) {
+  html.caom-reader-active .caom-reader-sidebar {
+    display: none;
+  }
+  html.caom-reader-active .caom-reader-container {
+    grid-template-columns: 1fr;
+  }
+  html.caom-reader-active .caom-reader-content {
+    grid-column: 1;
+  }
+}
+
+html.caom-reader-active .caom-reader-sidebar-right {
+  display: none;
+}
+
+html.caom-reader-active .caom-reader-title {
+  font-size: 1.75em;
+  font-weight: bold;
+  margin: 0 0 0.5rem 0;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+}
+
+html.caom-reader-active .caom-reader-meta {
+  font-size: 0.9em;
+  color: var(--caom-text-muted);
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--caom-border);
+  display: flex;
+  gap: 0;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+html.caom-reader-active .caom-reader-meta > span:first-child {
+  color: var(--caom-text);
+}
+
+html.caom-reader-active .caom-reader-meta a {
+  color: var(--caom-text-muted);
+  text-decoration: none;
+}
+
+html.caom-reader-active .caom-reader-meta a:hover {
+  text-decoration: underline;
+}
+
+html.caom-reader-active .caom-reader-article {
+  margin: 2rem 0;
+}
+
+html.caom-reader-active .caom-reader-article h1 {
+  font-size: 1.6em;
+  margin: 1.5rem 0 1rem;
+  font-weight: bold;
+}
+
+html.caom-reader-active .caom-reader-article h2 {
+  font-size: 1.4em;
+  margin: 1.5rem 0 0.75rem;
+  font-weight: bold;
+}
+
+html.caom-reader-active .caom-reader-article h3 {
+  font-size: 1.2em;
+  margin: 1.25rem 0 0.5rem;
+  font-weight: bold;
+}
+
+html.caom-reader-active .caom-reader-article h4,
+html.caom-reader-active .caom-reader-article h5,
+html.caom-reader-active .caom-reader-article h6 {
+  font-size: 1.05em;
+  margin: 1rem 0 0.5rem;
+  font-weight: bold;
+}
+
+html.caom-reader-active .caom-reader-article p {
+  margin: 1rem 0;
+}
+
+html.caom-reader-active .caom-reader-article a {
+  color: var(--caom-text);
+  text-decoration: underline;
+  text-decoration-color: var(--caom-border);
+}
+
+html.caom-reader-active .caom-reader-article a:hover {
+  text-decoration-color: var(--caom-accent);
+  color: var(--caom-accent);
+}
+
+html.caom-reader-active .caom-reader-article img {
+  max-width: 100%;
+  height: auto;
+  margin: 1rem 0;
+}
+
+html.caom-reader-active .caom-reader-article figure {
+  margin: 1.5rem 0;
+  text-align: center;
+}
+
+html.caom-reader-active .caom-reader-article figcaption {
+  font-size: 0.9em;
+  color: var(--caom-text-muted);
+  margin-top: 0.5rem;
+}
+
+html.caom-reader-active .caom-reader-article blockquote {
+  border-left: 4px solid var(--caom-accent);
+  padding-left: 1rem;
+  margin: 1.5rem 0;
+  color: var(--caom-text-muted);
+  font-style: italic;
+}
+
+html.caom-reader-active .caom-reader-article pre {
+  background: var(--caom-bg-alt);
+  border: 1px solid var(--caom-border);
+  border-radius: 4px;
+  padding: 1rem;
+  overflow-x: auto;
+  font-size: 0.9em;
+  line-height: 1.4;
+  margin: 1rem 0;
+}
+
+html.caom-reader-active .caom-reader-article code {
+  background: var(--caom-bg-alt);
+  padding: 0.1em 0.35em;
+  border-radius: 3px;
+  font-size: 0.9em;
+  font-family: 'Courier New', monospace;
+}
+
+html.caom-reader-active .caom-reader-article pre code {
+  background: none;
+  padding: 0;
+}
+
+html.caom-reader-active .caom-reader-article hr {
+  border: none;
+  border-top: 1px solid var(--caom-border);
+  margin: 2rem 0;
+}
+
+html.caom-reader-active .caom-table-wrapper {
+  overflow-x: auto;
+  margin: 1.5rem 0;
+}
+
+html.caom-reader-active .caom-reader-article table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1rem 0;
+}
+
+html.caom-reader-active .caom-reader-article th,
+html.caom-reader-active .caom-reader-article td {
+  border: 1px solid var(--caom-border);
+  padding: 0.75rem;
+  text-align: left;
+}
+
+html.caom-reader-active .caom-reader-article th {
+  background: var(--caom-bg-alt);
+  font-weight: bold;
+}
+
+html.caom-reader-active .caom-reader-footer {
+  font-size: 0.85em;
+  color: var(--caom-text-muted);
+  margin-top: 3rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--caom-border);
+}
+
+html.caom-reader-active .caom-reader-toolbar {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 2147483646;
+  display: flex;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+  align-items: center;
+  transition: opacity .2s, transform .2s;
+}
+
+html.caom-reader-active .caom-reader-toolbar.caom-hidden {
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+}
+
+html.caom-reader-active .caom-reader-toolbar > div {
+  display: flex;
+  gap: 2px;
+}
+
+html.caom-reader-active .caom-reader-toolbar button {
+  background: transparent;
+  border: none;
+  color: var(--caom-text-muted);
+  cursor: pointer;
+  padding: 5px 7px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: background-color 0.2s;
+}
+
+html.caom-reader-active .caom-reader-toolbar button:hover {
+  background: var(--caom-bg-alt);
+  color: var(--caom-text);
+}
+
+html.caom-reader-active .caom-reader-toolbar button:active {
+  opacity: 0.8;
+}
+
+html.caom-reader-active .caom-reader-panel {
+  position: fixed;
+  top: 44px;
+  right: 12px;
+  z-index: 2147483646;
+  background: var(--caom-bg);
+  border: 1px solid var(--caom-border);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0,0,0,.12);
+  display: flex;
+  flex-direction: column;
+  width: 148px;
+  min-width: 0;
+  padding: 10px;
+  gap: 8px;
+  font-size: 13px;
+}
+
+html.caom-reader-active .caom-reader-panel.caom-hidden {
+  display: none;
+}
+
+html.caom-reader-active .caom-seg {
+  display: flex;
+  border: 1px solid var(--caom-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--caom-bg);
+}
+
+html.caom-reader-active .caom-seg button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0;
+  background: transparent;
+  border: none;
+  color: var(--caom-text);
+  cursor: pointer;
+}
+
+html.caom-reader-active .caom-seg button + button {
+  border-left: 1px solid var(--caom-border);
+}
+
+html.caom-reader-active .caom-seg button:hover {
+  background: var(--caom-bg-alt);
+}
+
+html.caom-reader-active .caom-select-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--caom-border);
+  border-radius: 10px;
+  background: var(--caom-bg);
+  padding: 0 10px;
+  color: var(--caom-text);
+}
+
+html.caom-reader-active .caom-select-pill:hover {
+  background: var(--caom-bg-alt);
+}
+
+html.caom-reader-active .caom-pill-icon,
+html.caom-reader-active .caom-pill-chevron {
+  display: flex;
+  align-items: center;
+  color: var(--caom-text-muted);
+  flex-shrink: 0;
+}
+
+html.caom-reader-active .caom-pill-chevron svg {
+  width: 12px;
+  height: 12px;
+}
+
+html.caom-reader-active .caom-select-pill select {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 1;
+  min-width: 0;
+  border: none;
+  background: transparent;
+  color: var(--caom-text);
+  font: inherit;
+  font-size: 13px;
+  padding: 8px 0;
+  cursor: pointer;
+  outline: none;
+}
+
+html.caom-reader-active .caom-toolbar-icon-img {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+html.caom-reader-active .caom-reader-menu {
+  position: fixed;
+  top: 44px;
+  right: 12px;
+  z-index: 2147483646;
+  background: var(--caom-bg);
+  border: 1px solid var(--caom-border);
+  border-radius: 10px;
+  padding: 4px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  min-width: 220px;
+}
+
+html.caom-reader-active .caom-reader-menu.caom-hidden {
+  display: none;
+}
+
+html.caom-reader-active .caom-reader-menu button {
+  background: transparent;
+  border: none;
+  color: var(--caom-text);
+  cursor: pointer;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-family: inherit;
+}
+
+html.caom-reader-active .caom-reader-menu button:hover {
+  background: var(--caom-bg-alt);
+}
+
+html.caom-reader-active ul,
+html.caom-reader-active ol {
+  margin: 1rem 0;
+  padding-left: 2rem;
+}
+
+html.caom-reader-active li {
+  margin: 0.5rem 0;
+}
