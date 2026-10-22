@@ -38,7 +38,8 @@
   "scripts": {
     "build": "webpack --mode=production",
     "dev": "webpack --mode=development --watch",
-    "clean": "rm -rf dist/*"
+    "clean": "rm -rf dist/*",
+    "test": "TS_NODE_TRANSPILE_ONLY=1 TS_NODE_COMPILER_OPTIONS='{\"module\":\"commonjs\"}' node -r ts-node/register --test test/*.test.ts"
   },
   "keywords": [
     "webextension"
