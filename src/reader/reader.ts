@@ -8,6 +8,7 @@
 
 import { storageManager, CopyAsOrgModeOptions } from '../options'
 import { msgManager } from '../common'
+import { decorateArticle, articleHtmlForExport } from './article-dom'
 
 declare global {
   interface Window {
@@ -374,29 +375,7 @@ function populateArticleContent(): void {
 
   // Post-process
   try {
-    // Wrap tables
-    Array.from(articleEl.querySelectorAll('table')).forEach(table => {
-      const wrapper = document.createElement('div')
-      wrapper.className = 'caom-table-wrapper'
-      table.replaceWith(wrapper)
-      wrapper.appendChild(table)
-    })
-
-    // Fix images with data-src
-    Array.from(articleEl.querySelectorAll('img[data-src]')).forEach((img: any) => {
-      if (!img.src || img.src.startsWith('data:image/')) {
-        img.src = img.dataset.src
-      }
-    })
-
-    // Assign ids to headings
-    let headingIndex = 0
-    Array.from(articleEl.querySelectorAll('h2, h3, h4, h5, h6')).forEach((h: any) => {
-      if (!h.id) {
-        h.id = `caom-h-${headingIndex}`
-        headingIndex++
-      }
-    })
+    decorateArticle(articleEl)
   } catch (e) {
     console.warn('[caom-reader] content post-processing error:', e)
   }
@@ -785,7 +764,10 @@ function copyAsOrg(): void {
       saveImages: false,
     }
 
-    const orgBody = window.html2org.convert(article.contentHTML, conversionOptions)
+    // Convert the live article so highlights are included
+    const articleEl = document.querySelector('.caom-reader-article') as HTMLElement | null
+    const contentHTML = articleEl ? articleHtmlForExport(articleEl) : article.contentHTML
+    const orgBody = window.html2org.convert(contentHTML, conversionOptions)
 
     // Build org metadata header
     let header = `#+TITLE: ${article.title}\n`

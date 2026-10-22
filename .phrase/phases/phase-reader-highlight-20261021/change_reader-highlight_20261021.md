@@ -1,5 +1,20 @@
 # Changes: phase-reader-highlight-20261021
 
+## 2026-10-21 · task004
+
+- Add `src/reader/article-dom.ts`：
+  - `decorateArticle(el)`：从 `populateArticleContent` 原样搬出的三步加工（表格包 `div.caom-table-wrapper`、`img[data-src]` 修正 src、给 h2–h6 补 id）。
+  - `articleHtmlForExport(el)`：克隆当前文章 DOM，展开表格包装 div，返回 innerHTML；高亮 `<mark>` 保留，不改动原 DOM。
+  - 有意保留 data-src 修正后的 src：v1.5.0 在 Reader 中 Save 是对已加工的页面重新提取，保存的图片本来就是修正后的 src；还原会让 Save (with images) 退回占位图。标题 id 不影响 html2org 输出，无需撤销。
+- Modify `src/reader/reader.ts`：
+  - `populateArticleContent` 改为调用 `decorateArticle`。
+  - `copyAsOrg` 改为转换 `articleHtmlForExport(.caom-reader-article)`；找不到文章元素时退回 `article.contentHTML`。
+- Add `test/article-dom.test.ts`：5 个用例（加工生效、无高亮时转换结果与原 HTML 一致、保留修正后的图片 src 且去掉包装 div、不修改原 DOM、保留高亮）。
+- Modify `dist/reader.js`：重新构建。
+- 验证：`npm test` 27 pass；`npm run build` 通过。3 个真实页面（paulgraham.com/greatwork、en.wikipedia.org/wiki/Org-mode、jvns.ca 一篇博客）在 jsdom 中用 Defuddle 提取、模拟 Reader 填充与加工后，新旧路径的 Copy 输出和 saveImages 输出逐字一致。未在真实浏览器中手动点击验证。
+- 风险：Copy 现在依赖 `.caom-reader-article` 里只有正文；以后若往文章元素里插 UI 节点，需在 `articleHtmlForExport` 中剔除。
+- task_*：task004 勾选 [x]。
+
 ## 2026-10-21 · task003
 
 - Modify `src/html2org/chai.ts`：
