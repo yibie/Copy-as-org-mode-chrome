@@ -5,7 +5,7 @@
 ## M1 导出管线
 
 - task001 [x] 补最小测试入口（`npm test`），能对 `html2org.convert` 做输入 HTML → 输出 org 的断言。验证：`npm test` 跑通一个现有行为的用例。影响：`package.json`、新增测试目录。
-- task002 [ ] html2org 新规则：`mark[data-chai-type]` → `[[chai:TYPE(:NOTE)][TEXT]]`；同 `data-chai-id` 的相邻片段合并；批注清洗；原文 `[[`/`]]` 转义（先在 Emacs 中用 chai 实测转义写法）。验证：单元测试覆盖无批注、有批注、批注含 `:`、跨 `<em>` 片段合并、原文含 `]]`；样例在 Emacs 中 chai 正确识别。影响：`src/html2org/`。
+- task002 [x] html2org 新规则：`mark[data-chai-type]` → `[[chai:TYPE(:NOTE)][TEXT]]`；同 `data-chai-id` 的相邻片段合并；批注清洗；原文 `[[`/`]]` 转义（先在 Emacs 中用 chai 实测转义写法）。验证：单元测试覆盖无批注、有批注、批注含 `:`、跨 `<em>` 片段合并、原文含 `]]`；样例在 Emacs 中 chai 正确识别。影响：`src/html2org/`。
 - task003 [ ] html2org 新规则：跨块级元素的同 id 高亮 → `#+BEGIN_CHAI :type TYPE :note "NOTE"` 块。验证：单元测试覆盖两段落高亮、带批注、批注含引号；Emacs 中 chai 识别为块。影响：`src/html2org/`。
 
 ## M2 导出源切换

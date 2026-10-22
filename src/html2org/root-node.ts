@@ -29,6 +29,7 @@
 import collapseWhitespace from './collapse-whitespace'
 import { Html2OrgOptions } from './turndown'
 import { isBlock, isVoid } from './utilities'
+import { normalizeChaiMarks } from './chai'
 
 export default function RootNode (input: string | Node, options: Html2OrgOptions): Node {
   var root
@@ -59,6 +60,7 @@ export default function RootNode (input: string | Node, options: Html2OrgOptions
     root = input.cloneNode(true)
   }
   if (!root) { throw new Error('ERROR: Why root node is not existed?') }
+  normalizeChaiMarks(root as Element)
   collapseWhitespace({
     element: root,
     isBlock: isBlock,

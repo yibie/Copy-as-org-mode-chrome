@@ -29,6 +29,7 @@
 
 import { CustomNode } from './node'
 import { Rule } from './rules'
+import { chaiHighlightRule } from './chai'
 import { Html2OrgOptions } from './turndown'
 import { judgeCodeblockLanguage, repeat, exceptionSafeDecodeURI, wrapInlineMarkWithSpace, handleSquareBracketForUri } from './utilities'
 
@@ -40,6 +41,7 @@ type RulesKeys<Obj, K = keyof Obj> = Obj extends Record<infer K, any> ? K : neve
 type rule_name_t = RulesKeys<typeof rules>
 
 let rules = createRulesObject({
+  chaiHighlight: chaiHighlightRule,
   paragraph: {
     filter: 'p',
 
