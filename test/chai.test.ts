@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import { html2org } from '../src/html2org'
 
 const convert = (html: string) => html2org.convert(html, {})
-const ZWSP = '​'
+const ZWSP = '\u200b'
 
 function mark(text: string, type = 'key', note?: string, id = 'h1'): string {
   const noteAttr = note === undefined ? '' : ` data-chai-note="${note}"`
@@ -80,4 +80,37 @@ test('invalid type falls back to plain text', () => {
 
 test('plain <mark> without chai attributes is untouched', () => {
   assert.equal(convert('<p><mark>hello</mark></p>'), 'hello')
+})
+
+const Q = '&quot;'
+
+test('highlight across paragraphs becomes a CHAI block', () => {
+  const html = `<p>before ${mark('end p1')}</p><p>${mark('start p2')} after</p>`
+  assert.equal(
+    convert(html),
+    'before\n\n#+BEGIN_CHAI :type key\nend p1\n\nstart p2\n#+END_CHAI\n\nafter',
+  )
+})
+
+test('CHAI block note is quoted like %S', () => {
+  const html = `<p>${mark('a', 'idea', `he said ${Q}hi${Q} \\ ok`)}</p><p>${mark('b', 'idea', `he said ${Q}hi${Q} \\ ok`)}</p>`
+  assert.equal(
+    convert(html),
+    '#+BEGIN_CHAI :type idea :note "he said \\"hi\\" \\\\ ok"\na\n\nb\n#+END_CHAI',
+  )
+})
+
+test('CHAI block covers whole paragraphs in between', () => {
+  const html = `<p>${mark('one')}</p><p>two</p><p>${mark('three')}</p>`
+  assert.equal(convert(html), '#+BEGIN_CHAI :type key\none\n\ntwo\n\nthree\n#+END_CHAI')
+})
+
+test('CHAI block keeps links and does not escape brackets', () => {
+  const html = `<p>${mark('see <a href="https://e.com">site</a>')}</p><p>${mark('a ]] b')}</p>`
+  assert.equal(convert(html), '#+BEGIN_CHAI :type key\nsee [[https://e.com][site]]\n\na ]] b\n#+END_CHAI')
+})
+
+test('headings inside a CHAI block become plain paragraphs', () => {
+  const html = `<p>${mark('intro')}</p><h2>${mark('Title')}</h2><p>${mark('body')}</p>`
+  assert.equal(convert(html), '#+BEGIN_CHAI :type key\nintro\n\nTitle\n\nbody\n#+END_CHAI')
 })

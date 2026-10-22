@@ -1,5 +1,18 @@
 # Changes: phase-reader-highlight-20261021
 
+## 2026-10-21 · task003
+
+- Modify `src/html2org/chai.ts`：
+  - `normalizeChaiMarks`：去掉“同一块级祖先”的限制，跨段落的片段同样用 Range 合并成一个 `<mark>`。合并后含块级元素的 mark 把 h1–h6 改为 `<p>`，并保留内部链接；不含块级元素的仍展开 `<a>`。
+  - `chaiHighlightRule`：转换后的内容含换行时输出 `#+BEGIN_CHAI :type T [:note "N"]` 块，否则输出行内链接。
+  - 新增 `quoteElispString`（`%S` 风格）、`chaiBlock`、`chaiLink`；删除 `blockAncestor`。
+  - `ZWSP` 常量改用 `\u200b` 转义（之前是不可见的字面字符）；`test/chai.test.ts` 同步。
+- Modify `test/chai.test.ts`：新增 5 个块用例（跨两段、批注含引号和反斜杠、中间整段、块内链接与 `]]`、块内标题）。
+- Modify `dist/content-script.js`、`dist/copy.js`、`dist/html2org.js`：重新构建。
+- 验证：`npm test` 22 pass；输出在 Emacs 中经 `chai--collect-highlights` 解析，type/note/text 全部正确；`npm run build` 通过。
+- 风险：高亮跨越不同父级的块（如从段落跨进列表项）时，块插在两者的公共祖先下，可能把列表拆开。Reader 侧划线（task007）可以考虑限制这种选区。
+- spec_*：补充块输出规则、更新“链接文字被高亮”的结论。task_*：task003 勾选 [x]。
+
 ## 2026-10-21 · task002
 
 - Add `src/html2org/chai.ts`：
