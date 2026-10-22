@@ -7,7 +7,7 @@
  */
 
 import { storageManager, CopyAsOrgModeOptions } from '../options'
-import { msgManager } from '../common'
+import { msgManager, SavedPage } from '../common'
 import { decorateArticle, articleHtmlForExport } from './article-dom'
 
 declare global {
@@ -549,7 +549,7 @@ function buildToolbar(): void {
   const saveOrgBtn = document.createElement('button')
   saveOrgBtn.textContent = 'Save as Org-Mode'
   saveOrgBtn.addEventListener('click', () => {
-    msgManager.sendToBg({ type: 'savePageAsOrg' })
+    saveAsOrg(false)
     menu.classList.add('caom-hidden')
   })
   menu.appendChild(saveOrgBtn)
@@ -557,7 +557,7 @@ function buildToolbar(): void {
   const saveOrgFolderBtn = document.createElement('button')
   saveOrgFolderBtn.textContent = 'Save as Org-Mode (with images)'
   saveOrgFolderBtn.addEventListener('click', () => {
-    msgManager.sendToBg({ type: 'savePageAsOrgFolder' })
+    saveAsOrg(true)
     menu.classList.add('caom-hidden')
   })
   menu.appendChild(saveOrgFolderBtn)
@@ -738,6 +738,28 @@ function applyTheme(theme: 'auto' | 'light' | 'sepia' | 'dark'): void {
   }
 }
 
+// Convert the live article so highlights are included
+function convertArticle(saveImages: boolean): { org: string, extractedImages: SavedPage['extractedImages'] } {
+  if (!article || !opts) throw new Error('Reader not active')
+  const extractedImages: SavedPage['extractedImages'] = []
+  const conversionOptions = {
+    unorderedListMarker: opts.ulBulletChar,
+    orderedListMarker: opts.olBulletChar,
+    codeDelimiter: opts.codeChar,
+    listIndentSize: opts.listIndentSize,
+    codeBlockStyle: opts.codeBlockStyle,
+    decodeUri: opts.decodeUri,
+    squareBracketsInLink: opts.squareBracketsInLink,
+    ruby: opts.rubyHandleMethod,
+    saveImages,
+    // html2org fills extractedImages while converting
+    ...(saveImages ? { imagePathPrefix: opts.imagePathPrefix, extractedImages } : {}),
+  }
+  const articleEl = document.querySelector('.caom-reader-article') as HTMLElement | null
+  const contentHTML = articleEl ? articleHtmlForExport(articleEl) : article.contentHTML
+  return { org: window.html2org.convert(contentHTML, conversionOptions), extractedImages }
+}
+
 function copyAsOrg(): void {
   if (!article || !opts) return
 
@@ -751,23 +773,7 @@ function copyAsOrg(): void {
   }
 
   try {
-    // Build conversion options
-    const conversionOptions = {
-      unorderedListMarker: opts.ulBulletChar,
-      orderedListMarker: opts.olBulletChar,
-      codeDelimiter: opts.codeChar,
-      listIndentSize: opts.listIndentSize,
-      codeBlockStyle: opts.codeBlockStyle,
-      decodeUri: opts.decodeUri,
-      squareBracketsInLink: opts.squareBracketsInLink,
-      ruby: opts.rubyHandleMethod,
-      saveImages: false,
-    }
-
-    // Convert the live article so highlights are included
-    const articleEl = document.querySelector('.caom-reader-article') as HTMLElement | null
-    const contentHTML = articleEl ? articleHtmlForExport(articleEl) : article.contentHTML
-    const orgBody = window.html2org.convert(contentHTML, conversionOptions)
+    const orgBody = convertArticle(false).org
 
     // Build org metadata header
     let header = `#+TITLE: ${article.title}\n`
@@ -792,6 +798,47 @@ function copyAsOrg(): void {
       type: 'showBgNotification',
       title: 'Error',
       message: 'Copy as Org-Mode failed',
+    })
+  }
+}
+
+// Hand the converted article to the background, which would otherwise
+// re-extract the page and lose the highlights.
+function saveAsOrg(withImages: boolean): void {
+  if (!article || !opts) return
+
+  if (!window.html2org) {
+    msgManager.sendToBg({
+      type: 'showBgNotification',
+      title: 'Error',
+      message: 'html2org not loaded',
+    })
+    return
+  }
+
+  try {
+    const { org, extractedImages } = convertArticle(withImages)
+    const metaContent = (name: string) =>
+      document.querySelector(`meta[name="${name}"]`)?.getAttribute('content') || ''
+    const page: SavedPage = {
+      title: article.title,
+      content: org,
+      url: article.url,
+      author: article.author || metaContent('author'),
+      keywords: metaContent('keywords'),
+      extractedImages,
+    }
+    if (withImages) {
+      msgManager.sendToBg({ type: 'savePageAsOrgFolder', page })
+    } else {
+      msgManager.sendToBg({ type: 'savePageAsOrg', page })
+    }
+  } catch (err) {
+    console.error('[caom-reader] saveAsOrg error:', err)
+    msgManager.sendToBg({
+      type: 'showBgNotification',
+      title: 'Error',
+      message: 'Save as Org-Mode failed',
     })
   }
 }

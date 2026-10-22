@@ -11,7 +11,7 @@
 ## M2 导出源切换
 
 - task004 [x] Reader 的 Copy 改为转换 Reader 当前文章 DOM（而非 `article.contentHTML`），转换前去掉 reader 自身的 UI 节点。验证：无高亮时输出与 v1.5.0 逐字一致（对 3 个真实文章页对比）；手动加 `<mark>` 后 Copy 含 chai 链接。影响：`src/reader/reader.ts`。
-- task005 [ ] Save / Save (with images) 在 Reader View 中改为由 reader 提供 HTML/元数据给 background，不再重新提取。验证：两种 Save 在有/无高亮时输出正确，with images 图片正常下载；非 Reader 页面 Save 行为不变。影响：`src/reader/reader.ts`、`src/background.ts`。
+- task005 [x] Save / Save (with images) 在 Reader View 中改为由 reader 提供 HTML/元数据给 background，不再重新提取。验证：两种 Save 在有/无高亮时输出正确，with images 图片正常下载；非 Reader 页面 Save 行为不变。影响：`src/reader/reader.ts`、`src/background.ts`。（2026-10-22：单元测试与构建通过；用户在浏览器中手动验证 Reader 中两种 Save 正常）
 
 ## M3 type 配置
 

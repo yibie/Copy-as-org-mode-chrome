@@ -56,3 +56,14 @@ test('export keeps highlights', () => {
   p.innerHTML = 'Hello <mark data-chai-id="h1" data-chai-type="key">world</mark>'
   assert.equal(convert(articleHtmlForExport(el)), 'Hello [[chai:key][world]]')
 })
+
+test('Save (with images) options export highlights and collect the fixed image src', () => {
+  const el = decorated(`<p>A <mark data-chai-id="h1" data-chai-type="key">key point</mark>.</p>
+<img data-src="https://example.com/real.png" src="data:image/gif;base64,R0lGOD">`)
+  const extractedImages: { src: string, filename: string }[] = []
+  const org = html2org.convert(articleHtmlForExport(el), { saveImages: true, imagePathPrefix: './', extractedImages })
+  assert.match(org, /\[\[chai:key\]\[key point\]\]/)
+  assert.equal(extractedImages.length, 1)
+  assert.equal(extractedImages[0].src, 'https://example.com/real.png')
+  assert.ok(org.includes(extractedImages[0].filename))
+})

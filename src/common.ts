@@ -26,11 +26,22 @@ export interface MyMsg_CopyStringToClipboard {
 export interface MyMsg_ToggleReaderMode {
     type: 'toggleReaderMode'
 }
+/** A page already converted by the sender (the Reader View), so the background does not re-extract it. */
+export interface SavedPage {
+    title: string
+    content: string
+    url: string
+    author: string
+    keywords: string
+    extractedImages: { src: string, filename: string }[]
+}
 export interface MyMsg_SavePageAsOrg {
     type: 'savePageAsOrg'
+    page?: SavedPage
 }
 export interface MyMsg_SavePageAsOrgFolder {
     type: 'savePageAsOrgFolder'
+    page?: SavedPage
 }
 export type MyMsg =
     MyMsg_ShowNotification |

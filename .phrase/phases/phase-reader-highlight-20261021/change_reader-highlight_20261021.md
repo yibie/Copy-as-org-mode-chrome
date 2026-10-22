@@ -1,5 +1,32 @@
 # Changes: phase-reader-highlight-20261021
 
+## 2026-10-21 · task005
+
+- Modify `src/common.ts`：新增 `SavedPage`（title、content、url、author、keywords、extractedImages）；`MyMsg_SavePageAsOrg`、`MyMsg_SavePageAsOrgFolder` 增加可选字段 `page`。
+- Modify `src/background.ts`：
+  - `savePageAsOrg(tabId, page?)`、`savePageAsOrgFolder(tabId, page?)`：收到 `page` 时跳过注入脚本里的 Defuddle 提取与转换，直接用它生成文件；没有 `page` 时（右键菜单、非 Reader 页面）行为不变。
+  - 两段提取代码只是包进 `if (!...)` 并整体缩进两格，所以普通 diff 有约 570 行；`git diff -w` 下实际改动约 30 行。
+  - `savePageAsOrgFolder` 开头注入 `defuddle.js`、`content-script.js` 的步骤保留：第 3 步取图片需要页面里的 `window.html2org.fetchImagesAsBase64`。
+  - 消息处理把 `message.page` 传给两个函数。
+- Modify `src/reader/reader.ts`：
+  - 新增 `convertArticle(saveImages)`：Copy 与 Save 共用的转换；`saveImages` 为 true 时额外传 `imagePathPrefix` 和 `extractedImages`，与 background 的 with images 参数一致；为 false 时参数与原 Copy 完全相同。
+  - 新增 `saveAsOrg(withImages)`：把转换结果连同 title、url、author（Defuddle 结果，没有时取 `meta[name="author"]`）、keywords（`meta[name="keywords"]`）发给 background。
+  - Save、Save (with images) 两个按钮改为调用 `saveAsOrg`。
+  - `copyAsOrg` 改用 `convertArticle(false)`，输出不变。
+- Modify `test/article-dom.test.ts`：新增 1 个用例，with images 参数下高亮导出为 chai 链接，且收集到修正后的图片 src。
+- Modify `dist/background.js`、`dist/reader.js`：重新构建。
+- 验证：`npm test` 28 pass；`npm run build` 通过（3 条体积警告是原有的）。
+- 手动验证（2026-10-22，用户）：重新加载扩展、刷新页面后，Reader 中用 DevTools 加 `<mark>`，Save 与 Save (with images) 均按预期工作。第一次没反应，是因为没重新加载扩展。手动步骤：
+  1. Reader 中手动给一段文字加 `<mark data-chai-id="h1" data-chai-type="key">`（DevTools），再点 Save → 文件含 `[[chai:key][...]]`。
+  2. 同一页点 Save (with images)，选一个有图片的页面 → 保存页打开，图片正常下载，org 中图片路径正确。
+  3. 非 Reader 页面右键 → 两种 Save → 与改动前一致。
+- 行为变化：
+  - Reader 中 Save 的正文现在与 Copy 同源。v1.5.0 是对 Reader 页面重跑 Defuddle，再用宽松规则删掉开头像标题的元素；两者输出的差异没有比对。spec「导出」第 3 条已同步改写。
+  - `#+KEYWORDS` 的来源不变：旧路径里读 Defuddle `metaTags` 的代码把数组当对象用，从未生效，实际一直取 `meta[name="keywords"]`。
+- Modify `src/background.ts` `toggleReaderMode`：注入列表加 `dist/content-script.js`。原因：Reader 的 Copy / Save 依赖 `window.html2org`，它通常由 manifest 注入；重新加载扩展后、在已打开的标签页里进入 Reader 时它不存在，会提示 `html2org not loaded`。v1.5.0 的 Save 自己注入脚本，不受影响，task005 后 Save 也会受影响，所以在这里补上。重复注入只是重新赋值 `window.html2org`，无副作用。
+- task_*：task005 勾选 [x]。
+- pr-faq_*：用户 FAQ「普通的 Copy / Save 会变吗？」改为只对 Copy 承诺与 v1.5.0 一致。
+
 ## 2026-10-21 · task004
 
 - Add `src/reader/article-dom.ts`：

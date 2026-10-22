@@ -77,7 +77,7 @@
 ### 导出
 1. Org 菜单 → Copy / Save / Save (with images)。
 2. 导出内容来自 Reader 当前文章 DOM；高亮按 chai 语法输出。
-3. 无高亮时输出与 v1.5.0 一致。
+3. 无高亮时，Copy 的输出与 v1.5.0 一致。Save / Save (with images) 的正文与 Copy 同源（Reader 当前文章 DOM），不再由 background 重新提取；与 v1.5.0 在 Reader 中 Save 的输出可能不同（v1.5.0 是对 Reader 页面重跑 Defuddle，再做宽松的标题去重）。
 
 ### 退出
 1. 有高亮且自上次导出后有改动时，退出 Reader View（按钮或 Esc）先弹确认。

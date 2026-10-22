@@ -25,7 +25,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import { MyMsg, msgManager } from "./common";
+import { MyMsg, SavedPage, msgManager } from "./common";
 import { exceptionSafeDecodeURI } from "./html2org/utilities";
 import { CopyAsOrgModeOptions, objectAssignPerfectly, storageManager } from "./options";
 import { Readability } from '@mozilla/readability';
@@ -292,11 +292,11 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
       return true; // Keep the message channel open for the async response
     }
     case 'savePageAsOrg': {
-      if (sender.tab?.id !== undefined) { savePageAsOrg(sender.tab.id) }
+      if (sender.tab?.id !== undefined) { savePageAsOrg(sender.tab.id, message.page) }
       break;
     }
     case 'savePageAsOrgFolder': {
-      if (sender.tab?.id !== undefined) { savePageAsOrgFolder(sender.tab.id) }
+      if (sender.tab?.id !== undefined) { savePageAsOrgFolder(sender.tab.id, message.page) }
       break;
     }
   }
@@ -408,174 +408,163 @@ async function bgCopyToClipboard(text: string, html?: string): Promise<boolean> 
 }
 
 // 将 Turndown 相关代码移到一个单独的内容脚本中
-async function savePageAsOrg(tabId: number) {
+async function savePageAsOrg(tabId: number, page?: SavedPage) {
   try {
-    console.log('[savePageAsOrg] Injecting scripts...');
-    // 先注入内容脚本
-    await chrome.scripting.executeScript({
-      target: { tabId: tabId },
-      files: ['dist/defuddle.js', 'dist/content-script.js']
-    });
-    console.log('[savePageAsOrg] Scripts injected.');
+    let pageResult = page;
+    if (!pageResult) {
+      console.log('[savePageAsOrg] Injecting scripts...');
+      // 先注入内容脚本
+      await chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        files: ['dist/defuddle.js', 'dist/content-script.js']
+      });
+      console.log('[savePageAsOrg] Scripts injected.');
 
-    // 然后执行转换
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tabId },
-      func: async (options) => {
-        try {
-          console.log('[content-script] Starting conversion...');
-          // Use Defuddle to extract content
-          let content = "";
-          let title = document.title;
-          let author = document.querySelector('meta[name="author"]')?.getAttribute('content') || '';
-          let description = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
-          let site = '';
-          let domain = window.location.hostname;
-          let published = '';
-          let keywords = document.querySelector('meta[name="keywords"]')?.getAttribute('content') || '';
-          
-          if (window.Defuddle) {
-              console.log('[content-script] Defuddle found, attempting parse...');
-              try {
-                  const defuddle = new window.Defuddle(document, {
-                    url: document.URL,
-                    language: options.defuddleLanguage || undefined,
-                  });
-                  const article = await defuddle.parseAsync();
-                  if (article) {
-                      console.log('[content-script] Defuddle success:', article);
-                      if (article.content) content = article.content;
-                      if (article.title) title = article.title;
-                      if (article.author) author = article.author;
-                      if (article.description) description = article.description;
-                      if (article.site) site = article.site;
-                      if (article.domain) domain = article.domain;
-                      if (article.published) published = article.published;
-                      
-                      if (article.metaTags) {
-                          const meta: any = article.metaTags;
-                          const tags = meta.keywords || meta.news_keywords || meta.tags;
-                          if (tags) {
-                              keywords = Array.isArray(tags) ? tags.join(',') : tags;
-                          }
-                      }
-                  } else {
-                      console.warn('[content-script] Defuddle returned null article');
-                  }
-              } catch (e) {
-                  const msg = e instanceof Error ? e.message : String(e);
-                  console.error("[content-script] Defuddle failed:", e);
-              }
-          } else {
-              console.warn('[content-script] window.Defuddle is undefined!');
-          }
-
-          if (!content) {
-              console.log('[content-script] Fallback to simple extraction');
-              // Fallback to simple selection
-              const article = document.querySelector('article') || document.body;
-              content = article.innerHTML;
-          }
-
-          // 创建一个临时的 div 来解析内容
-          const div = document.createElement('div');
-          div.innerHTML = content;
-
-          // Aggressively remove title-like headers from the beginning
-          const titleText = title.trim().toLowerCase();
-          // Use live collection or loop carefully. Let's just check the first element repeatedly up to a limit.
-          // Or strictly check first few children.
-          let attempts = 0;
-          while (div.firstElementChild && attempts < 3) {
-              const el = div.firstElementChild;
-              if (/^H[1-6]$/.test(el.tagName) || el.tagName === 'DIV' || el.tagName === 'P' || el.tagName === 'HEADER') {
-                   const elText = el.textContent?.trim().toLowerCase() || '';
-                   if (elText.length > 5 && (titleText.includes(elText) || elText.includes(titleText))) {
-                       el.remove();
-                       attempts++;
-                       continue; // Check the next first element
-                   }
-              }
-              break; // Stop if the first element doesn't match
-          }
-
-          // 使用注入的转换器
-          // @ts-ignore
-          // @ts-ignore
-          const conversionOptions = {
-            ...options,
-            saveImages: false, // Force disable images for single file mode
-            extractedImages: undefined
-          };
-
-          let orgContent = "";
+      // 然后执行转换
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        func: async (options) => {
           try {
-              console.log('[content-script] Converting to Org...');
-              orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
-              console.log('[content-script] Conversion success.');
-          } catch (e) {
-              console.error('[content-script] Conversion failed:', e);
-              // If Defuddle content failed, try fallback to raw content
-              console.log('[content-script] Retrying with raw body content...');
-              const rawArticle = document.querySelector('article') || document.body;
-              div.innerHTML = rawArticle.innerHTML;
-              orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+            console.log('[content-script] Starting conversion...');
+            // Use Defuddle to extract content
+            let content = "";
+            let title = document.title;
+            let author = document.querySelector('meta[name="author"]')?.getAttribute('content') || '';
+            let description = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+            let site = '';
+            let domain = window.location.hostname;
+            let published = '';
+            let keywords = document.querySelector('meta[name="keywords"]')?.getAttribute('content') || '';
+          
+            if (window.Defuddle) {
+                console.log('[content-script] Defuddle found, attempting parse...');
+                try {
+                    const defuddle = new window.Defuddle(document, {
+                      url: document.URL,
+                      language: options.defuddleLanguage || undefined,
+                    });
+                    const article = await defuddle.parseAsync();
+                    if (article) {
+                        console.log('[content-script] Defuddle success:', article);
+                        if (article.content) content = article.content;
+                        if (article.title) title = article.title;
+                        if (article.author) author = article.author;
+                        if (article.description) description = article.description;
+                        if (article.site) site = article.site;
+                        if (article.domain) domain = article.domain;
+                        if (article.published) published = article.published;
+                      
+                        if (article.metaTags) {
+                            const meta: any = article.metaTags;
+                            const tags = meta.keywords || meta.news_keywords || meta.tags;
+                            if (tags) {
+                                keywords = Array.isArray(tags) ? tags.join(',') : tags;
+                            }
+                        }
+                    } else {
+                        console.warn('[content-script] Defuddle returned null article');
+                    }
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    console.error("[content-script] Defuddle failed:", e);
+                }
+            } else {
+                console.warn('[content-script] window.Defuddle is undefined!');
+            }
+
+            if (!content) {
+                console.log('[content-script] Fallback to simple extraction');
+                // Fallback to simple selection
+                const article = document.querySelector('article') || document.body;
+                content = article.innerHTML;
+            }
+
+            // 创建一个临时的 div 来解析内容
+            const div = document.createElement('div');
+            div.innerHTML = content;
+
+            // Aggressively remove title-like headers from the beginning
+            const titleText = title.trim().toLowerCase();
+            // Use live collection or loop carefully. Let's just check the first element repeatedly up to a limit.
+            // Or strictly check first few children.
+            let attempts = 0;
+            while (div.firstElementChild && attempts < 3) {
+                const el = div.firstElementChild;
+                if (/^H[1-6]$/.test(el.tagName) || el.tagName === 'DIV' || el.tagName === 'P' || el.tagName === 'HEADER') {
+                     const elText = el.textContent?.trim().toLowerCase() || '';
+                     if (elText.length > 5 && (titleText.includes(elText) || elText.includes(titleText))) {
+                         el.remove();
+                         attempts++;
+                         continue; // Check the next first element
+                     }
+                }
+                break; // Stop if the first element doesn't match
+            }
+
+            // 使用注入的转换器
+            // @ts-ignore
+            // @ts-ignore
+            const conversionOptions = {
+              ...options,
+              saveImages: false, // Force disable images for single file mode
+              extractedImages: undefined
+            };
+
+            let orgContent = "";
+            try {
+                console.log('[content-script] Converting to Org...');
+                orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+                console.log('[content-script] Conversion success.');
+            } catch (e) {
+                console.error('[content-script] Conversion failed:', e);
+                // If Defuddle content failed, try fallback to raw content
+                console.log('[content-script] Retrying with raw body content...');
+                const rawArticle = document.querySelector('article') || document.body;
+                div.innerHTML = rawArticle.innerHTML;
+                orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+            }
+
+            return {
+              title,
+              content: orgContent,
+              extractedImages: [],
+              url: document.URL,
+              author,
+              description,
+              site,
+              domain,
+              published,
+              keywords
+            };
+          } catch (err) {
+            console.error('Error in content script:', err);
+            return null;
           }
+        },
+        args: [{
+          unorderedListMarker: STORAGE.ulBulletChar,
+          orderedListMarker: STORAGE.olBulletChar,
+          codeDelimiter: STORAGE.codeChar,
+          listIndentSize: STORAGE.listIndentSize,
+          codeBlockStyle: STORAGE.codeBlockStyle,
+          decodeUri: STORAGE.decodeUri,
+          squareBracketsInLink: STORAGE.squareBracketsInLink,
+          ruby: STORAGE.rubyHandleMethod,
+          saveImages: false, // Force false here too
+          imagePathPrefix: STORAGE.imagePathPrefix,
+          imageSaveSubfolder: STORAGE.imageSaveSubfolder,
+          extractedImages: [],
+          defuddleLanguage: STORAGE.defuddleLanguage
+        }]
+      });
 
-          return {
-            title,
-            content: orgContent,
-            extractedImages: [],
-            url: document.URL,
-            author,
-            description,
-            site,
-            domain,
-            published,
-            keywords
-          };
-        } catch (err) {
-          console.error('Error in content script:', err);
-          return null;
-        }
-      },
-      args: [{
-        unorderedListMarker: STORAGE.ulBulletChar,
-        orderedListMarker: STORAGE.olBulletChar,
-        codeDelimiter: STORAGE.codeChar,
-        listIndentSize: STORAGE.listIndentSize,
-        codeBlockStyle: STORAGE.codeBlockStyle,
-        decodeUri: STORAGE.decodeUri,
-        squareBracketsInLink: STORAGE.squareBracketsInLink,
-        ruby: STORAGE.rubyHandleMethod,
-        saveImages: false, // Force false here too
-        imagePathPrefix: STORAGE.imagePathPrefix,
-        imageSaveSubfolder: STORAGE.imageSaveSubfolder,
-        extractedImages: [],
-        defuddleLanguage: STORAGE.defuddleLanguage
-      }]
-    });
-
-    if (!results?.[0]?.result) {
-      throw new Error('Failed to get page content');
+      if (!results?.[0]?.result) {
+        throw new Error('Failed to get page content');
+      }
+      pageResult = results[0].result as SavedPage;
     }
 
-    const { 
-        title, content, url, author, description, 
-        site, domain, published, keywords,
-        extractedImages: resultImages 
-    } = results[0].result as {
-      title: string,
-      content: string,
-      url: string,
-      author: string,
-      description: string,
-      site: string,
-      domain: string,
-      published: string,
-      keywords: string,
-      extractedImages: { src: string, filename: string }[]
-    };
+    const { title, content, url, author, keywords } = pageResult;
 
     // 构建最终的 org 文件内容
     let finalContent = `#+TITLE: ${title}\n`;
@@ -630,7 +619,7 @@ async function savePageAsOrg(tabId: number) {
   }
 }
 
-async function savePageAsOrgFolder(tabId: number) {
+async function savePageAsOrgFolder(tabId: number, page?: SavedPage) {
   try {
     // 1. Inject content script
     await chrome.scripting.executeScript({
@@ -638,141 +627,133 @@ async function savePageAsOrgFolder(tabId: number) {
       files: ['dist/defuddle.js', 'dist/content-script.js']
     });
 
-    // 2. Convert and Extract URLs
-    const results = await chrome.scripting.executeScript({
-      target: { tabId: tabId },
-      func: async (options) => {
-        try {
-          // Use Defuddle to extract content
-          let content = "";
-          let title = document.title;
-          let author = document.querySelector('meta[name="author"]')?.getAttribute('content') || '';
-          let description = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
-          let site = '';
-          let domain = window.location.hostname;
-          let published = '';
-          let keywords = document.querySelector('meta[name="keywords"]')?.getAttribute('content') || '';
-          
-          if (window.Defuddle) {
-              console.log('[content-script] Defuddle found, attempting parse...');
-              try {
-                  const defuddle = new window.Defuddle(document, {
-                    url: document.URL,
-                    language: options.defuddleLanguage || undefined,
-                  });
-                  const article = await defuddle.parseAsync();
-                  if (article) {
-                      console.log('[content-script] Defuddle success:', article);
-                      if (article.content) content = article.content;
-                      if (article.title) title = article.title;
-                      if (article.author) author = article.author;
-                      if (article.description) description = article.description;
-                      if (article.site) site = article.site;
-                      if (article.domain) domain = article.domain;
-                      if (article.published) published = article.published;
-                      
-                      if (article.metaTags) {
-                          const meta: any = article.metaTags;
-                          const tags = meta.keywords || meta.news_keywords || meta.tags;
-                          if (tags) {
-                              keywords = Array.isArray(tags) ? tags.join(',') : tags;
-                          }
-                      }
-                  } else {
-                      console.warn('[content-script] Defuddle returned null article');
-                  }
-              } catch (e) {
-                  const msg = e instanceof Error ? e.message : String(e);
-                  console.error("[content-script] Defuddle failed:", e);
-              }
-          }
-
-          if (!content) {
-             const article = document.querySelector('article') || document.body;
-             content = article.innerHTML;
-          }
-
-          const div = document.createElement('div');
-          div.innerHTML = content;
-
-          // Aggressively remove title-like headers from the beginning
-          const titleText = title.trim().toLowerCase();
-          let attempts = 0;
-          while (div.firstElementChild && attempts < 3) {
-              const el = div.firstElementChild;
-              if (/^H[1-6]$/.test(el.tagName) || el.tagName === 'DIV' || el.tagName === 'P' || el.tagName === 'HEADER') {
-                   const elText = el.textContent?.trim().toLowerCase() || '';
-                   if (elText.length > 5 && (titleText.includes(elText) || elText.includes(titleText))) {
-                       el.remove();
-                       attempts++;
-                       continue;
-                   }
-              }
-              break;
-          }
-
-          // @ts-ignore
-          const conversionOptions = {
-            ...options,
-            extractedImages: [] // Enable extraction
-          };
-
-          let orgContent = "";
+    let extracted = page;
+    if (!extracted) {
+      // 2. Convert and Extract URLs
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tabId },
+        func: async (options) => {
           try {
-              orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
-          } catch (e) {
-              console.error('[content-script] Conversion failed:', e);
-              const rawArticle = document.querySelector('article') || document.body;
-              div.innerHTML = rawArticle.innerHTML;
-              orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+            // Use Defuddle to extract content
+            let content = "";
+            let title = document.title;
+            let author = document.querySelector('meta[name="author"]')?.getAttribute('content') || '';
+            let description = document.querySelector('meta[name="description"]')?.getAttribute('content') || '';
+            let site = '';
+            let domain = window.location.hostname;
+            let published = '';
+            let keywords = document.querySelector('meta[name="keywords"]')?.getAttribute('content') || '';
+          
+            if (window.Defuddle) {
+                console.log('[content-script] Defuddle found, attempting parse...');
+                try {
+                    const defuddle = new window.Defuddle(document, {
+                      url: document.URL,
+                      language: options.defuddleLanguage || undefined,
+                    });
+                    const article = await defuddle.parseAsync();
+                    if (article) {
+                        console.log('[content-script] Defuddle success:', article);
+                        if (article.content) content = article.content;
+                        if (article.title) title = article.title;
+                        if (article.author) author = article.author;
+                        if (article.description) description = article.description;
+                        if (article.site) site = article.site;
+                        if (article.domain) domain = article.domain;
+                        if (article.published) published = article.published;
+                      
+                        if (article.metaTags) {
+                            const meta: any = article.metaTags;
+                            const tags = meta.keywords || meta.news_keywords || meta.tags;
+                            if (tags) {
+                                keywords = Array.isArray(tags) ? tags.join(',') : tags;
+                            }
+                        }
+                    } else {
+                        console.warn('[content-script] Defuddle returned null article');
+                    }
+                } catch (e) {
+                    const msg = e instanceof Error ? e.message : String(e);
+                    console.error("[content-script] Defuddle failed:", e);
+                }
+            }
+
+            if (!content) {
+               const article = document.querySelector('article') || document.body;
+               content = article.innerHTML;
+            }
+
+            const div = document.createElement('div');
+            div.innerHTML = content;
+
+            // Aggressively remove title-like headers from the beginning
+            const titleText = title.trim().toLowerCase();
+            let attempts = 0;
+            while (div.firstElementChild && attempts < 3) {
+                const el = div.firstElementChild;
+                if (/^H[1-6]$/.test(el.tagName) || el.tagName === 'DIV' || el.tagName === 'P' || el.tagName === 'HEADER') {
+                     const elText = el.textContent?.trim().toLowerCase() || '';
+                     if (elText.length > 5 && (titleText.includes(elText) || elText.includes(titleText))) {
+                         el.remove();
+                         attempts++;
+                         continue;
+                     }
+                }
+                break;
+            }
+
+            // @ts-ignore
+            const conversionOptions = {
+              ...options,
+              extractedImages: [] // Enable extraction
+            };
+
+            let orgContent = "";
+            try {
+                orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+            } catch (e) {
+                console.error('[content-script] Conversion failed:', e);
+                const rawArticle = document.querySelector('article') || document.body;
+                div.innerHTML = rawArticle.innerHTML;
+                orgContent = window.html2org.convert(div.innerHTML, conversionOptions);
+            }
+
+            return {
+              title,
+              content: orgContent,
+              extractedImages: conversionOptions.extractedImages || [],
+              url: document.URL,
+              author,
+              description,
+              site,
+              domain,
+              published,
+              keywords
+            };
+          } catch (err) {
+            console.error('Error in content script:', err);
+            return null;
           }
+        },
+        args: [{
+          unorderedListMarker: STORAGE.ulBulletChar,
+          orderedListMarker: STORAGE.olBulletChar,
+          codeDelimiter: STORAGE.codeChar,
+          listIndentSize: STORAGE.listIndentSize,
+          codeBlockStyle: STORAGE.codeBlockStyle,
+          decodeUri: STORAGE.decodeUri,
+          squareBracketsInLink: STORAGE.squareBracketsInLink,
+          ruby: STORAGE.rubyHandleMethod,
+          saveImages: true, // Always save images for this mode
+          imagePathPrefix: STORAGE.imagePathPrefix,
+          defuddleLanguage: STORAGE.defuddleLanguage
+        }]
+      });
 
-          return {
-            title,
-            content: orgContent,
-            extractedImages: conversionOptions.extractedImages || [],
-            url: document.URL,
-            author,
-            description,
-            site,
-            domain,
-            published,
-            keywords
-          };
-        } catch (err) {
-          console.error('Error in content script:', err);
-          return null;
-        }
-      },
-      args: [{
-        unorderedListMarker: STORAGE.ulBulletChar,
-        orderedListMarker: STORAGE.olBulletChar,
-        codeDelimiter: STORAGE.codeChar,
-        listIndentSize: STORAGE.listIndentSize,
-        codeBlockStyle: STORAGE.codeBlockStyle,
-        decodeUri: STORAGE.decodeUri,
-        squareBracketsInLink: STORAGE.squareBracketsInLink,
-        ruby: STORAGE.rubyHandleMethod,
-        saveImages: true, // Always save images for this mode
-        imagePathPrefix: STORAGE.imagePathPrefix,
-        defuddleLanguage: STORAGE.defuddleLanguage
-      }]
-    });
-
-    if (!results?.[0]?.result) throw new Error('Failed to get page content');
-
-    const result = results[0].result as {
-      title: string,
-      content: string,
-      url: string,
-      author: string,
-      description: string,
-      site: string,
-      domain: string,
-      published: string,
-      keywords: string,
-      extractedImages: { src: string, filename: string }[]
-    };
+      if (!results?.[0]?.result) throw new Error('Failed to get page content');
+      extracted = results[0].result as SavedPage;
+    }
+    const result = extracted;
     
     console.log('[savePageAsOrgFolder] Extracted images:', result.extractedImages);
 
@@ -889,7 +870,7 @@ async function toggleReaderMode(tab: chrome.tabs.Tab | undefined): Promise<void>
   })
   await chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    files: ['dist/defuddle.js', 'dist/reader.js'],
+    files: ['dist/defuddle.js', 'dist/content-script.js', 'dist/reader.js'],
   })
   await msgManager.sendToTab(tab.id, { type: 'toggleReaderMode' })
 }
