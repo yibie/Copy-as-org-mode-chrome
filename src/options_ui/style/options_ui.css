@@ -44,6 +44,14 @@ textarea {
     white-space: nowrap;
 }
 
+.invalid {
+    outline: 2px solid #d32f2f;
+}
+
+.error-note {
+    color: #d32f2f;
+}
+
 
 
 /**

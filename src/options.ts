@@ -12,6 +12,7 @@
  * remedy known factual inaccuracies. (Cited from MPL - 2.0, chapter 3.3)
  */
 
+import { ChaiType, DEFAULT_CHAI_TYPES, normalizeChaiTypes } from './chai-types'
 
 /** First item is default. DON'T REORDER */
 enum __NotificationMethod { inPagePopup, notificationApi, none }
@@ -82,6 +83,8 @@ export interface CopyAsOrgModeOptions {
     readerLineHeight: number
     /** Reader view font family */
     readerFontFamily: 'sans-serif' | 'serif'
+    /** chai highlight types offered in the Reader View, in menu order */
+    chaiTypes: ChaiType[]
 }
 
 
@@ -176,7 +179,8 @@ class StorageManager {
             readerFontSize: 18,
             readerLineWidth: 42,
             readerLineHeight: 1.6,
-            readerFontFamily: 'sans-serif'
+            readerFontFamily: 'sans-serif',
+            chaiTypes: DEFAULT_CHAI_TYPES.map(t => ({ ...t })),
         }
     }
     /** Set data object (can be partial) into LocalStorage. */
@@ -237,6 +241,7 @@ class StorageManager {
             // ==================================
             // MIGRATION ENDS
             // ==================================
+            final.chaiTypes = normalizeChaiTypes(final.chaiTypes)
             console.log('[GET] FIXED', final)
             if (needSave) {
                 this.setDataPartially(final)

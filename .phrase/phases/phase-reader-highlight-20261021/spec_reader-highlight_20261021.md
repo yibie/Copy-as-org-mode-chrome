@@ -50,7 +50,9 @@
 | hard | #EDE7F6 |
 | block | #ECEFF1 |
 | view | #F3E5F5 |
-| outdated | #9E9E9E 前景 + 删除线 |
+| outdated | #E0E0E0（chai 用 #9E9E9E 前景 + 删除线；Reader 中另加删除线） |
+
+存储：`chaiTypes: { name, color }[]`（`color` 为高亮背景，`#rrggbb`），按菜单顺序保存在 extension storage。读取时修复：不是数组则用默认值；丢弃名字不合法、重复或颜色不合法的条目；允许空列表（只剩自定义输入）。
 
 ### 字段约束
 

@@ -13,6 +13,7 @@
  */
 
 import { storageManager } from "../options"
+import { ChaiType, DEFAULT_CHAI_TYPES, chaiTypesError, isValidChaiTypeName } from "../chai-types"
 import { initSyntaxhlElements } from "../syntaxhl/syntaxhl"
 import tippy from 'tippy.js'
 import 'tippy.js/dist/tippy.css'
@@ -111,6 +112,7 @@ async function loadFromLocalStorage() {
     setCheckboxValue('decodeUri', d.decodeUri)
     setSelectValue('squareBracketsInLink', d.squareBracketsInLink)
     q<HTMLInputElement>('defuddleLanguage').value = d.defuddleLanguage || ''
+    renderChaiTypes(d.chaiTypes)
 
 }
 
@@ -137,7 +139,97 @@ async function saveFormToLocalStorage() {
         decodeUri: getCheckboxValue('decodeUri'),
         squareBracketsInLink: getSelectValue('squareBracketsInLink') as any,
         defuddleLanguage: q<HTMLInputElement>('defuddleLanguage').value,
+        ...chaiTypesToSave(),
     })
+}
+
+// ==================================
+// chai type table
+// ==================================
+
+function chaiTypeRow(t: ChaiType): HTMLTableRowElement {
+    const tr = document.createElement('tr')
+    tr.className = 'row chai-type-row'
+    const color = document.createElement('input')
+    color.type = 'color'
+    color.className = 'chai-type-color'
+    color.value = t.color
+    const name = document.createElement('input')
+    name.type = 'text'
+    name.className = 'chai-type-name'
+    name.value = t.name
+    name.placeholder = 'type name'
+    const actions = document.createElement('td')
+    actions.className = 'nowrap'
+    for (const [action, label] of [['up', '↑'], ['down', '↓'], ['delete', 'Delete']]) {
+        const btn = document.createElement('button')
+        btn.type = 'button'
+        btn.dataset.action = action
+        btn.textContent = label
+        actions.appendChild(btn)
+    }
+    const colorTd = document.createElement('td')
+    colorTd.appendChild(color)
+    const nameTd = document.createElement('td')
+    nameTd.className = 'w100'
+    nameTd.appendChild(name)
+    tr.append(colorTd, nameTd, actions)
+    return tr
+}
+
+function renderChaiTypes(types: ChaiType[]) {
+    q('chaiTypesBody').replaceChildren(...types.map(chaiTypeRow))
+    validateChaiTypes()
+}
+
+function readChaiTypes(): ChaiType[] {
+    return Array.from(q('chaiTypesBody').querySelectorAll('tr')).map(tr => ({
+        name: tr.querySelector<HTMLInputElement>('.chai-type-name')!.value.trim(),
+        color: tr.querySelector<HTMLInputElement>('.chai-type-color')!.value,
+    }))
+}
+
+/** Mark invalid or repeated names in red; returns whether the table can be saved. */
+function validateChaiTypes(): boolean {
+    const inputs = Array.from(q('chaiTypesBody').querySelectorAll<HTMLInputElement>('.chai-type-name'))
+    const names = inputs.map(i => i.value.trim())
+    inputs.forEach((input, i) => {
+        const bad = !isValidChaiTypeName(names[i]) || names.indexOf(names[i]) !== i
+        input.classList.toggle('invalid', bad)
+    })
+    const err = chaiTypesError(readChaiTypes())
+    q('chaiTypesError').textContent = err ? `${err} (not saved)` : ''
+    return err === null
+}
+
+function chaiTypesToSave(): { chaiTypes?: ChaiType[] } {
+    return validateChaiTypes() ? { chaiTypes: readChaiTypes() } : {}
+}
+
+function watchChaiTypes() {
+    const body = q('chaiTypesBody')
+    body.addEventListener('input', () => validateChaiTypes())
+    body.addEventListener('click', (ev) => {
+        const btn = (ev.target as HTMLElement).closest<HTMLButtonElement>('button[data-action]')
+        if (!btn) { return }
+        const tr = btn.closest('tr')!
+        switch (btn.dataset.action) {
+            case 'up': tr.previousElementSibling?.before(tr); break
+            case 'down': tr.nextElementSibling?.after(tr); break
+            case 'delete': tr.remove(); break
+        }
+        saveFormToLocalStorage()
+    })
+    q<HTMLButtonElement>('chaiTypeAddBtn').onclick = () => {
+        const tr = chaiTypeRow({ name: '', color: '#fff59d' })
+        body.appendChild(tr)
+        validateChaiTypes()
+        tr.querySelector<HTMLInputElement>('.chai-type-name')!.focus()
+    }
+    q<HTMLButtonElement>('chaiTypesResetBtn').onclick = () => {
+        renderChaiTypes(DEFAULT_CHAI_TYPES)
+        saveFormToLocalStorage()
+    }
 }
 
 
@@ -208,6 +300,7 @@ async function main() {
     installTippy()
     await loadFromLocalStorage()
     watchForm()
+    watchChaiTypes()
     initSyntaxhlElements()
 }
 

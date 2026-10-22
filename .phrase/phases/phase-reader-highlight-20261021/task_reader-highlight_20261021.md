@@ -15,7 +15,7 @@
 
 ## M3 type 配置
 
-- task006 [ ] Options 页 chai type 表：默认 12 个 type 和颜色，可增删改、排序，type 名校验 `[A-Za-z0-9_-]+`，存 extension storage。验证：增删改后刷新保留；非法名字禁止保存。影响：`src/options.ts`、`src/options_ui/`。
+- task006 [x] Options 页 chai type 表：默认 12 个 type 和颜色，可增删改、排序，type 名校验 `[A-Za-z0-9_-]+`，存 extension storage。验证：增删改后刷新保留；非法名字禁止保存。影响：`src/options.ts`、`src/options_ui/`。
 
 ## M4 交互
 

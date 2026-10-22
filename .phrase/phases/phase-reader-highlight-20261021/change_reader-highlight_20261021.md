@@ -1,5 +1,16 @@
 # Changes: phase-reader-highlight-20261021
 
+## 2026-10-22 · task006
+
+- Add `src/chai-types.ts`：`ChaiType { name, color }`；`DEFAULT_CHAI_TYPES`（chai 的 12 个内置 type，颜色取 chai 浅色主题 face 的背景）；`isValidChaiTypeName`（`[A-Za-z0-9_-]+`）；`chaiTypesError`（名字不合法、重复、颜色不是 `#rrggbb` 时返回原因）；`normalizeChaiTypes`（修复存储值）。
+- Modify `src/options.ts`：`CopyAsOrgModeOptions` 新增 `chaiTypes`，默认值为 `DEFAULT_CHAI_TYPES` 的副本；`getData` 读取后用 `normalizeChaiTypes` 修复。老用户首次读取时自动写入默认值（沿用已有的 `needSave` 逻辑）。
+- Modify `src/options_ui/options_ui.pug`、`options_ui.ts`、`style/options_ui.css`：新增 “Reader Highlights (chai)” 一节。每行是颜色选择器、type 名输入框、上移、下移、删除；下方有 “Add type” 和 “Reset types to chai defaults”。名字不合法或重复时输入框标红、显示原因，整张表不保存，其它设置照常保存。
+- Add `test/chai-types.test.ts`：6 个用例。
+- Modify `dist/`：重新构建。
+- 决定：`outdated` 在 chai 里是灰色前景加删除线，不是背景色。表里只存背景色，默认给 `#E0E0E0`；删除线由 task007 的 Reader 样式按 type 名单独加。spec「默认 type 表」已同步。
+- 验证：`npm test` 34 pass；`npm run build` 通过。用 jsdom 加载构建后的 `options_ui.html`，配内存版 `chrome.storage.sync`：默认 12 行；新增 `fact` 后保存；`bad name` 与重复的 `key` 标红且不保存；上移、删除、改色后保存，重新加载页面后表格一致；重置恢复默认。未在真实浏览器中目视检查。
+- task_*：task006 勾选 [x]。
+
 ## 2026-10-21 · task005
 
 - Modify `src/common.ts`：新增 `SavedPage`（title、content、url、author、keywords、extractedImages）；`MyMsg_SavePageAsOrg`、`MyMsg_SavePageAsOrgFolder` 增加可选字段 `page`。

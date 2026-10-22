@@ -117,6 +117,21 @@ html
           div: input(id='imagePathPrefix' type='text' placeholder='e.g. ./images/ or file:~/org/images/')
           div: span.small-note The path prefix added to image links in the Org file (e.g. [[prefix/image.png]]).
 
+      h2 Reader Highlights (chai)
+      div Types offered when highlighting in the Reader View, in menu order. A highlight is exported as #[code= '[[chai:type][text]]']; add the same names to #[code chai-highlight-types] in Emacs to color them there.
+      table#chaiTypesTable
+        thead
+          tr
+            th Color
+            th Type
+            th
+        tbody#chaiTypesBody
+      div
+        button#chaiTypeAddBtn(type='button') Add type
+        button#chaiTypesResetBtn(type='button') Reset types to chai defaults
+      div: span#chaiTypesError.small-note.error-note
+      div: span.small-note Type names may contain only letters, digits, #[code _] and #[code -]. Changes are not saved while a name is invalid or repeated.
+
       h2 Reference Link
       table
         +tablerow_checkbox('insertReferenceLink_enabled'): span When copy selection, insert a link to the current page as reference
