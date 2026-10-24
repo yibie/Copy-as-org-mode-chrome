@@ -30,3 +30,4 @@
 ## 插入任务（issue / 站点适配）
 
 - task011 [x] 修 issue002：保存文件名去掉不可见格式字符、首尾 `.`/空格，限制 200 字节；`#+TITLE`/`#+AUTHOR`/`#+KEYWORDS` 同步清理；图片扩展名只接受字母数字。验证：`test/org-filename.test.ts`；手动保存 https://zhuanlan.zhihu.com/p/2079219486700344366 成功（待用户确认）。影响：`src/org-filename.ts`、`src/background.ts`、`src/save_folder/save_folder.ts`、`src/html2org/commonmark-rules.ts`。
+- task012 [x] 知乎专栏文章站点提取：只取 `.Post-RichText`，去掉赞同数和发布信息，搜索链接还原为文字，`link.zhihu.com` 跳转还原，用原图。验证：`test/zhihu.test.ts`；在该知乎页面上运行构建后的 `dist/defuddle.js` 检查结果（已做）；用户在浏览器 Copy / Save（待确认）。影响：`src/extractors/`、`src/defuddle.ts`。

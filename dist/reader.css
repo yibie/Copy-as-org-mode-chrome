@@ -520,3 +520,132 @@ html.caom-reader-active ol {
 html.caom-reader-active li {
   margin: 0.5rem 0;
 }
+
+/* ==================================
+   chai highlights
+   ================================== */
+
+/* Fallback for types not in the Options table; per-type colors are injected by reader.ts */
+html.caom-reader-active .caom-reader-article mark[data-chai-type] {
+  background: #fff59d;
+  color: #1a1a1a;
+  border-radius: 2px;
+}
+
+/* Inline code inside a highlight takes the highlight color, keeping its padding */
+html.caom-reader-active .caom-reader-article mark[data-chai-type] code {
+  background: transparent;
+}
+
+html.caom-reader-active .caom-reader-article mark[data-chai-type="outdated"] {
+  text-decoration: line-through;
+}
+
+html.caom-reader-active .caom-reader-article mark[data-chai-note] {
+  position: relative;
+}
+
+/* A zero-width spacer as tall as the bubble (height measured by reader.ts),
+   so the bubble sits in extra space above its own line and other lines keep
+   their spacing */
+html.caom-reader-active .caom-reader-article mark:has(> .caom-chai-note)::after {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: calc(var(--caom-note-h, 0px) + 12px + 1em);
+  vertical-align: baseline;
+}
+
+/* Note bubble (highlight.ts addNoteBubble), inside the last piece of a
+   highlight, always shown floating above it in space its line reserves.
+   It is an empty element drawn from data-note, and exports remove it. */
+html.caom-reader-active .caom-reader-article .caom-chai-note {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px);
+  z-index: 10;
+  width: max-content;
+  max-width: 280px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: var(--caom-text);
+  color: var(--caom-bg);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+html.caom-reader-active .caom-reader-article .caom-chai-note::after {
+  content: attr(data-note);
+}
+
+/* The tail, pointing down at the highlight */
+html.caom-reader-active .caom-reader-article .caom-chai-note::before {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: var(--caom-text);
+}
+
+html.caom-reader-active .caom-hl-menu {
+  position: fixed;
+  z-index: 2147483646;
+  background: var(--caom-bg);
+  border: 1px solid var(--caom-border);
+  border-radius: 10px;
+  padding: 6px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 320px;
+}
+
+html.caom-reader-active .caom-hl-menu.caom-hidden {
+  display: none;
+}
+
+html.caom-reader-active .caom-hl-types {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+html.caom-reader-active .caom-hl-type {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #1a1a1a;
+  cursor: pointer;
+}
+
+html.caom-reader-active .caom-hl-type:hover {
+  filter: brightness(0.92);
+}
+
+html.caom-reader-active .caom-hl-input {
+  border: 1px solid var(--caom-border);
+  border-radius: 6px;
+  padding: 5px 8px;
+  font-size: 12px;
+  font-family: inherit;
+  background: var(--caom-bg);
+  color: var(--caom-text);
+}
+
+html.caom-reader-active .caom-hl-input.caom-hl-invalid {
+  outline: 2px solid #d32f2f;
+}
+

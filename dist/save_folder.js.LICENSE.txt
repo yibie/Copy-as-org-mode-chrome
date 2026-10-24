@@ -9,3 +9,9 @@ Dual licenced under the MIT license or GPLv3. See https://raw.github.com/Stuk/js
 JSZip uses the library pako released under the MIT license :
 https://github.com/nodeca/pako/blob/main/LICENSE
 */
+
+/*!
+ * This Source Code Form is subject to the terms of the Mozilla Public License,
+ * v. 2.0 (MPL-2.0). If a copy of the MPL was not distributed with this file,
+ * You can obtain one at https://mozilla.org/MPL/2.0/.
+ */
