@@ -26,3 +26,7 @@
 ## M5 发布
 
 - task010 [ ] README 增加高亮说明；版本号升到 1.6.0（`package.json`、`manifest.json`）；按 spec Acceptance Criteria 全量回归。验证：逐条勾选 Acceptance Criteria。影响：`README*`、`package.json`、`manifest.json`。
+
+## 插入任务（issue / 站点适配）
+
+- task011 [x] 修 issue002：保存文件名去掉不可见格式字符、首尾 `.`/空格，限制 200 字节；`#+TITLE`/`#+AUTHOR`/`#+KEYWORDS` 同步清理；图片扩展名只接受字母数字。验证：`test/org-filename.test.ts`；手动保存 https://zhuanlan.zhihu.com/p/2079219486700344366 成功（待用户确认）。影响：`src/org-filename.ts`、`src/background.ts`、`src/save_folder/save_folder.ts`、`src/html2org/commonmark-rules.ts`。

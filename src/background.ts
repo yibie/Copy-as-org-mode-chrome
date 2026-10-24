@@ -31,6 +31,7 @@ import { CopyAsOrgModeOptions, objectAssignPerfectly, storageManager } from "./o
 import { Readability } from '@mozilla/readability';
 import TurndownService from "./html2org/turndown";
 import { html2org } from './html2org';
+import { cleanMetaText, orgFilename } from './org-filename'
 
 
 /** This can be modify */
@@ -574,14 +575,14 @@ async function savePageAsOrg(tabId: number, page?: SavedPage) {
     const { title, content, url, author, keywords } = pageResult;
 
     // 构建最终的 org 文件内容
-    let finalContent = `#+TITLE: ${title}\n`;
+    let finalContent = `#+TITLE: ${cleanMetaText(title)}\n`;
     finalContent += `#+DATE: ${new Date().toISOString()}\n`;
-    if (author) finalContent += `#+AUTHOR: ${author}\n`;
+    if (author && cleanMetaText(author)) finalContent += `#+AUTHOR: ${cleanMetaText(author)}\n`;
     finalContent += `#+SOURCE_URL: ${url}\n`;
 
     let keywordList: string[] = [];
     if (keywords) {
-        keywordList = keywords.split(/,\s*/).filter(k => k.trim());
+        keywordList = keywords.split(/,\s*/).map(cleanMetaText).filter(k => k);
         if (keywordList.length > 0) {
              finalContent += `#+KEYWORDS: ${keywordList.join(', ')}\n`;
         }
@@ -592,24 +593,7 @@ async function savePageAsOrg(tabId: number, page?: SavedPage) {
     // 使用 data URL
     const dataUrl = 'data:text/org;charset=utf-8;base64,' + btoa(unescape(encodeURIComponent(finalContent)));
 
-    const sanitize = (s: string) => s.replace(/[<>:"/\\|?*#\x00-\x1F]/g, '').replace(/\s+/g, ' ').trim();
-    const cleanComponent = (s: string) => sanitize(s).replace(/__/g, ' ').replace(/==/g, ' ').trim();
-
-    const safeTitle = cleanComponent(title);
-    const safeAuthor = author ? cleanComponent(author) : '';
-    const safeKeywords = keywordList.map(cleanComponent).slice(0, 5).join('_');
-
-    let filename = '';
-    if (safeAuthor) {
-        filename += `${safeAuthor}__`;
-    }
-    filename += safeTitle;
-    if (safeKeywords) {
-        filename += `==${safeKeywords}`;
-    }
-    filename += `.org`;
-
-    if (filename === '.org') filename = 'captured_content.org';
+    const filename = orgFilename(title, author || '', keywordList);
 
     await chrome.downloads.download({
       url: dataUrl,
@@ -808,14 +792,14 @@ async function savePageAsOrgFolder(tabId: number, page?: SavedPage) {
     }
 
     // 4. Prepare Metadata and Filename
-    let finalContent = `#+TITLE: ${result.title}\n`;
+    let finalContent = `#+TITLE: ${cleanMetaText(result.title)}\n`;
     finalContent += `#+DATE: ${new Date().toISOString()}\n`;
-    if (result.author) finalContent += `#+AUTHOR: ${result.author}\n`;
+    if (result.author && cleanMetaText(result.author)) finalContent += `#+AUTHOR: ${cleanMetaText(result.author)}\n`;
     finalContent += `#+SOURCE_URL: ${result.url}\n`;
 
     let keywordList: string[] = [];
     if (result.keywords) {
-        keywordList = result.keywords.split(/,\s*/).filter(k => k.trim());
+        keywordList = result.keywords.split(/,\s*/).map(cleanMetaText).filter(k => k);
         if (keywordList.length > 0) {
              finalContent += `#+KEYWORDS: ${keywordList.join(', ')}\n`;
         }
@@ -823,24 +807,7 @@ async function savePageAsOrgFolder(tabId: number, page?: SavedPage) {
 
     finalContent += `\n${result.content}`;
 
-    const sanitize = (s: string) => s.replace(/[<>:"/\\|?*#\x00-\x1F]/g, '').replace(/\s+/g, ' ').trim();
-    const cleanComponent = (s: string) => sanitize(s).replace(/__/g, ' ').replace(/==/g, ' ').trim();
-
-    const safeTitle = cleanComponent(result.title);
-    const safeAuthor = result.author ? cleanComponent(result.author) : '';
-    const safeKeywords = keywordList.map(cleanComponent).slice(0, 5).join('_');
-
-    let filename = '';
-    if (safeAuthor) {
-        filename += `${safeAuthor}__`;
-    }
-    filename += safeTitle;
-    if (safeKeywords) {
-        filename += `==${safeKeywords}`;
-    }
-    filename += `.org`;
-
-    if (filename === '.org') filename = 'captured_content.org';
+    const filename = orgFilename(result.title, result.author || '', keywordList);
 
     // 5. Store Data
     const dataId = `save_folder_${Date.now()}`;

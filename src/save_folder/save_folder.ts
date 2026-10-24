@@ -1,5 +1,6 @@
 
 import JSZip from 'jszip';
+import { orgFilename } from '../org-filename';
 
 interface IImageInfo {
     filename: string;
@@ -48,11 +49,7 @@ async function main() {
             btn.disabled = true;
 
             // Determine filenames
-            let filename = data.filename;
-            if (!filename) {
-                const safeTitle = data.title.replace(/[<>:"/\\|?*]/g, '_').trim();
-                filename = `${safeTitle}.org`;
-            }
+            const filename = data.filename || orgFilename(data.title);
 
             let dirHandle;
             let fileSystemAccessFailed = false;

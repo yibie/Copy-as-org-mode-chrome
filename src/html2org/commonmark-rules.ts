@@ -208,7 +208,9 @@ let rules = createRulesObject({
           let imgSrc = options.decodeUri ? exceptionSafeDecodeURI(img.src) : img.src
 
           if (options.saveImages && options.extractedImages) {
-            const extension = img.src.split('.').pop()?.split(/[?#]/)[0] || 'png';
+            // Only a plain extension; a '/' or other junk from the URL would make the name invalid
+            const ext = img.src.split(/[?#]/)[0].split('.').pop() ?? ''
+            const extension = /^[a-z0-9]{1,5}$/i.test(ext) ? ext : 'png';
             const filename = `image_${Date.now()}_${options.extractedImages.length}.${extension}`;
 
             options.extractedImages.push({
