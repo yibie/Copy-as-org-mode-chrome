@@ -2,10 +2,9 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { DEFAULT_CHAI_TYPES, isValidChaiTypeName, chaiTypesError, normalizeChaiTypes } from '../src/chai-types'
 
-test('defaults are chai\'s 12 built-in types, in chai\'s order', () => {
+test('defaults follow the user\'s chai-highlight-types, in its order', () => {
   assert.deepEqual(DEFAULT_CHAI_TYPES.map(t => t.name), [
-    'important', 'idea', 'question', 'critical', 'key', 'core',
-    'detail', 'example', 'hard', 'block', 'view', 'outdated',
+    'key', 'idea', 'question', 'fact',
   ])
   assert.equal(chaiTypesError(DEFAULT_CHAI_TYPES), null)
 })

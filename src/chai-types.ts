@@ -17,20 +17,13 @@ export interface ChaiType {
 }
 
 /** chai's built-in `chai-highlight-types`, colored like its light-theme faces. */
+// The user's chai palette (nova-emacs `chai-highlight-types`); colors are chai's
+// light faces, and fact inherits question's blue
 export const DEFAULT_CHAI_TYPES: ChaiType[] = [
-    { name: 'important', color: '#ffe0b2' },
+    { name: 'key', color: '#ffe082' },
     { name: 'idea', color: '#b2dfdb' },
     { name: 'question', color: '#bbdefb' },
-    { name: 'critical', color: '#ffb74d' },
-    { name: 'key', color: '#ffe082' },
-    { name: 'core', color: '#ffccbc' },
-    { name: 'detail', color: '#dcedc8' },
-    { name: 'example', color: '#e3f2fd' },
-    { name: 'hard', color: '#ede7f6' },
-    { name: 'block', color: '#eceff1' },
-    { name: 'view', color: '#f3e5f5' },
-    // chai shows outdated as gray strike-through text; the Reader adds the strike-through
-    { name: 'outdated', color: '#e0e0e0' },
+    { name: 'fact', color: '#bbdefb' },
 ]
 
 const NAME_RE = /^[A-Za-z0-9_-]+$/

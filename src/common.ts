@@ -12,7 +12,7 @@
  * remedy known factual inaccuracies. (Cited from MPL - 2.0, chapter 3.3)
  */
 
-export type my_msg_t = 'showBgNotification' | 'showInPageNotification' | 'copyStringToClipboard' | 'toggleReaderMode' | 'savePageAsOrg' | 'savePageAsOrgFolder'
+export type my_msg_t = 'showBgNotification' | 'showInPageNotification' | 'copyStringToClipboard' | 'toggleReaderMode' | 'savePageAsOrg' | 'savePageAsOrgFolder' | 'insertReaderCss'
 export interface MyMsg_ShowNotification {
     type: 'showBgNotification' | 'showInPageNotification',
     title: string
@@ -43,12 +43,18 @@ export interface MyMsg_SavePageAsOrgFolder {
     type: 'savePageAsOrgFolder'
     page?: SavedPage
 }
+/** CSS for the sender tab, inserted by the extension so the page's CSP cannot block it */
+export interface MyMsg_InsertReaderCss {
+    type: 'insertReaderCss'
+    css: string
+}
 export type MyMsg =
     MyMsg_ShowNotification |
     MyMsg_CopyStringToClipboard |
     MyMsg_ToggleReaderMode |
     MyMsg_SavePageAsOrg |
-    MyMsg_SavePageAsOrgFolder
+    MyMsg_SavePageAsOrgFolder |
+    MyMsg_InsertReaderCss
 export class msgManager {
     static sendToTab<T extends MyMsg>(tabId: number, msg: T) {
         return chrome.tabs.sendMessage(tabId, msg) as Promise<T | void>

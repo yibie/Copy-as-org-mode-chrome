@@ -299,6 +299,13 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
       if (sender.tab?.id !== undefined) { savePageAsOrgFolder(sender.tab.id, message.page) }
       break;
     }
+    case 'insertReaderCss': {
+      if (sender.tab?.id !== undefined) {
+        chrome.scripting.insertCSS({ target: { tabId: sender.tab.id }, css: message.css })
+          .catch(err => console.error('[insertReaderCss]', err));
+      }
+      break;
+    }
   }
 });
 

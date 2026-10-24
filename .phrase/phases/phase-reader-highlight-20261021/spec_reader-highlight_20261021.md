@@ -10,7 +10,7 @@
 
 - Reader View 内选中文字后弹浮动菜单，按 type 高亮，可选批注。
 - 点击已有高亮可改 type、改批注、删除。
-- Options 页维护 chai type 表（名字 + 颜色），默认 chai 的 12 个内置 type。
+- Options 页维护 chai type 表（名字 + 颜色），默认取用户 chai 配置的 4 个 type。
 - 菜单提供“自定义 type”输入，临时使用表外 type。
 - Copy as Org-Mode、Save as Org-Mode、Save as Org-Mode (with images) 三个导出都带上高亮。
 - 输出与 chai（`~/Documents/emacs/package/org-zettel-ref-mode/chai/chai.el`）自身生成的语法一致。
@@ -37,20 +37,16 @@
 
 ### 默认 type 表
 
+默认值取用户 chai 配置（`~/.config/nova-emacs/modules/nova-org.el` 的 `chai-highlight-types`），顺序一致：
+
 | type | 颜色（chai light 背景） |
 |------|------|
-| important | #FFE0B2 |
+| key | #FFE082 |
 | idea | #B2DFDB |
 | question | #BBDEFB |
-| critical | #FFB74D |
-| key | #FFE082 |
-| core | #FFCCBC |
-| detail | #DCEDC8 |
-| example | #E3F2FD |
-| hard | #EDE7F6 |
-| block | #ECEFF1 |
-| view | #F3E5F5 |
-| outdated | #E0E0E0（chai 用 #9E9E9E 前景 + 删除线；Reader 中另加删除线） |
+| fact | #BBDEFB（nova-emacs 的 `chai-highlight-fact` 继承 question 的蓝色） |
+
+Reader 对 `outdated` 仍加删除线，用户自己加这个 type 时生效。
 
 存储：`chaiTypes: { name, color }[]`（`color` 为高亮背景，`#rrggbb`），按菜单顺序保存在 extension storage。读取时修复：不是数组则用默认值；丢弃名字不合法、重复或颜色不合法的条目；允许空列表（只剩自定义输入）。
 
@@ -67,10 +63,11 @@
 ## User Flows
 
 ### 划线
-1. 用户在 Reader View 文章区选中文字（选区必须完全在文章正文内）。
+1. 用户在 Reader View 文章区用鼠标选中文字（选区必须完全在文章正文内；在文章区内松开鼠标才弹菜单）。第一版不支持纯键盘选区（Shift+方向键）。
 2. 选区附近弹出浮动菜单：type 按钮列表（按 Options 顺序，按钮背景为该 type 颜色）、批注输入框、“自定义 type”输入框。
 3. 点击 type 按钮（或在自定义输入框回车）→ 选区包成 `<mark>`，显示对应颜色；菜单关闭，选区清除。
 4. 回退：Esc 或点菜单外部 → 关闭菜单，不做改动。
+5. 有批注的高亮：批注以深色气泡一直浮在高亮最后一段的上方（带朝下的小三角，最宽 280px，可换行）；气泡所在的那一行会加高，留出放气泡的空间，不盖住上一行，其它行行距不变；气泡不响应鼠标，下面的文字照常可选。气泡是不含文字的显示元素，选区和导出都看不到它。
 
 ### 编辑已有高亮
 1. 点击已有高亮 → 弹同一菜单，当前 type 处于选中态，批注框预填。
@@ -90,13 +87,16 @@
 - 同一段落内跨 `<em>`/`<a>`/`<code>` 的选区：拆成多个 `<mark>` 片段，共享 `data-chai-id`，导出合并为一个链接。
 - 跨段落（跨块级元素）选区：导出为 `#+BEGIN_CHAI` 块。
 - 选区与已有高亮重叠：拒绝创建，菜单不弹出（第一版不做合并/嵌套）。
-- 选区包含图片、表格、代码块：拒绝创建。
+- 选区包含或位于图片、表格、代码块（`pre`）及其它媒体（`picture`、`svg`、`video`、`audio`、`iframe`、`canvas`）中：拒绝创建。行内 `<code>` 允许。
+- 选区跨越列表项边界（从段落进入列表项，或跨两个列表项）：拒绝创建，否则导出的块会把列表拆开。同一列表项内允许。
 - 选区为空或仅空白：不弹菜单。
+- 选区先收紧到实际覆盖的非空白文字再检查（Chrome 三击选段时终点落在下一块开头）。
+- 菜单弹出后页面滚动：菜单关闭。
 - 链接文字被高亮：行内链接中丢弃内层链接、保留文字（org 链接不能嵌套）；`#+BEGIN_CHAI` 块中保留链接。
 
 ## Acceptance Criteria
 
-- [ ] Options 页可增删改 type，刷新后保留；默认 12 个 type。
+- [ ] Options 页可增删改 type，刷新后保留；默认 4 个 type（key/idea/question/fact）。
 - [ ] Reader View 选中文字后弹菜单，点 type 后出现对应颜色高亮。
 - [ ] 点击高亮可改 type、改批注、删除。
 - [ ] Copy 结果中行内高亮为 `[[chai:TYPE(:NOTE)][TEXT]]`，跨段落为 `#+BEGIN_CHAI` 块；在 Emacs 中 chai 正确识别 type 和 note。

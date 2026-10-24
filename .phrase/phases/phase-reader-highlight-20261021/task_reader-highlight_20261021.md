@@ -15,11 +15,11 @@
 
 ## M3 type 配置
 
-- task006 [x] Options 页 chai type 表：默认 12 个 type 和颜色，可增删改、排序，type 名校验 `[A-Za-z0-9_-]+`，存 extension storage。验证：增删改后刷新保留；非法名字禁止保存。影响：`src/options.ts`、`src/options_ui/`。
+- task006 [x] Options 页 chai type 表：默认 type 和颜色（2026-10-22 改为用户 chai 配置的 4 个，见 task007 change），可增删改、排序，type 名校验 `[A-Za-z0-9_-]+`，存 extension storage。验证：增删改后刷新保留；非法名字禁止保存。影响：`src/options.ts`、`src/options_ui/`。
 
 ## M4 交互
 
-- task007 [ ] 选区浮动菜单：type 按钮（按配置顺序、配置颜色）、批注框、自定义 type 输入；点击后按文本节点切分包裹 `<mark data-chai-id data-chai-type data-chai-note>`；拒绝空选区、重叠已有高亮、含图片/表格/代码块的选区；Esc/点外部关闭。验证：手动在 3 个真实文章页上划线，含跨 `<em>`、跨段落。影响：`src/reader/reader.ts`、`src/reader/reader.css`。
+- task007 [x] 选区浮动菜单：type 按钮（按配置顺序、配置颜色）、批注框、自定义 type 输入；点击后按文本节点切分包裹 `<mark data-chai-id data-chai-type data-chai-note>`；拒绝空选区、重叠已有高亮、含图片/表格/代码块的选区；Esc/点外部关闭。验证：手动在 3 个真实文章页上划线，含跨 `<em>`、跨段落。影响：`src/reader/reader.ts`、`src/reader/reader.css`。
 - task008 [ ] 点击已有高亮：同一菜单，改 type、改批注、删除（解包 `<mark>` 并 `normalize()`）。验证：手动操作后 Copy 结果对应变化。影响：`src/reader/reader.ts`。
 - task009 [ ] 退出确认：有自上次导出以来的高亮改动时，退出（按钮/Esc）弹确认。验证：手动——无高亮直接退出；有改动弹确认；导出后再退出不弹。影响：`src/reader/reader.ts`。
 

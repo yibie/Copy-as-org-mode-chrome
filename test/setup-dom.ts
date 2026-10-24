@@ -7,3 +7,4 @@ g.window = dom.window
 g.document = dom.window.document
 g.DOMParser = dom.window.DOMParser
 g.Node = dom.window.Node
+g.NodeFilter = dom.window.NodeFilter

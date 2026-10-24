@@ -1,5 +1,6 @@
 # CHANGE Index
 
+- 2026-10-22 · phase-reader-highlight-20261021 · task007 Reader 选区浮动菜单与划线 → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`
 - 2026-10-22 · phase-reader-highlight-20261021 · task006 Options 页 chai type 表 → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`
 - 2026-10-21 · phase-reader-highlight-20261021 · task005 Reader 的 Save / Save (with images) 改为由 reader 提供已转换页面 → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`
 - 2026-10-21 · phase-reader-highlight-20261021 · task004 Reader Copy 改为转换当前文章 DOM → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`

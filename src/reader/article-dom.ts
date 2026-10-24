@@ -12,6 +12,8 @@
  * so saved images already used the fixed src.
  */
 
+import { NOTE_BUBBLE_CLASS } from './highlight'
+
 const TABLE_WRAPPER_CLASS = 'caom-table-wrapper'
 
 export function decorateArticle(articleEl: HTMLElement): void {
@@ -44,5 +46,6 @@ export function decorateArticle(articleEl: HTMLElement): void {
 export function articleHtmlForExport(articleEl: HTMLElement): string {
   const clone = articleEl.cloneNode(true) as HTMLElement
   clone.querySelectorAll(`.${TABLE_WRAPPER_CLASS}`).forEach(w => w.replaceWith(...Array.from(w.childNodes)))
+  clone.querySelectorAll(`.${NOTE_BUBBLE_CLASS}`).forEach(b => b.remove())
   return clone.innerHTML
 }

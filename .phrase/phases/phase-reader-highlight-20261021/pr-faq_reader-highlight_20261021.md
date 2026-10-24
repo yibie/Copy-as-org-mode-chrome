@@ -19,7 +19,7 @@ Copy as Org-Mode 的 Reader View 新增划线功能。用户在浏览器里读�
 3. 每个人的 chai type 都不一样，比如自己加了 `fact`。通用工具只有固定几种颜色，表达不了这些语义。
 
 **解决方案**
-在 Reader View 里选中文字，会弹出一个浮动菜单，里面列出用户自己配置的 chai type，可以选填批注。导出时，高亮原地替换成 chai 的语法：选区不跨段落时写成 `[[chai:type:批注][原文]]`，跨段落时写成 `#+BEGIN_CHAI :type ... :note "..."` 块，和 chai 在 Emacs 里自己生成的结果完全一样。type 列表在 Options 页维护，默认带 chai 的 12 个内置 type 和对应颜色。
+在 Reader View 里选中文字，会弹出一个浮动菜单，里面列出用户自己配置的 chai type，可以选填批注。导出时，高亮原地替换成 chai 的语法：选区不跨段落时写成 `[[chai:type:批注][原文]]`，跨段落时写成 `#+BEGIN_CHAI :type ... :note "..."` 块，和 chai 在 Emacs 里自己生成的结果完全一样。type 列表在 Options 页维护，默认和用户 chai 配置一致（key、idea、question、fact）及对应颜色。
 
 **负责人引言**
 “chai 解决了 Emacs 里的拆读问题，但大部分阅读发生在浏览器里。这一版把划线这一步前移到阅读当下：读到哪划到哪，存下来就已经是拆好的笔记。”

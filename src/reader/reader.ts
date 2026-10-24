@@ -9,6 +9,8 @@
 import { storageManager, CopyAsOrgModeOptions } from '../options'
 import { msgManager, SavedPage } from '../common'
 import { decorateArticle, articleHtmlForExport } from './article-dom'
+import { addNoteBubble, checkHighlightRange, tightenRange, wrapRange } from './highlight'
+import { isValidChaiTypeName } from '../chai-types'
 
 declare global {
   interface Window {
@@ -122,6 +124,9 @@ async function applyReader(): Promise<void> {
     buildOutline(articleEl)
   }
   buildToolbar()
+  if (articleEl) {
+    installHighlighting(articleEl)
+  }
 
   readerActive = true
 }
@@ -841,4 +846,133 @@ function saveAsOrg(withImages: boolean): void {
       message: 'Save as Org-Mode failed',
     })
   }
+}
+
+// ==================================
+// Highlighting
+// ==================================
+
+let hlMenu: HTMLElement | null = null
+let hlNoteInput: HTMLInputElement | null = null
+let hlCustomInput: HTMLInputElement | null = null
+/** The selection the open menu acts on; inputs in the menu take the focus and clear the live selection */
+let pendingRange: Range | null = null
+
+function installHighlighting(articleEl: HTMLElement): void {
+  applyHighlightColors()
+  hlMenu = buildHighlightMenu()
+  document.body.appendChild(hlMenu)
+
+  document.addEventListener('mousedown', (e: MouseEvent) => {
+    if (!hlMenu!.contains(e.target as Node)) hideHighlightMenu()
+  })
+  document.addEventListener('mouseup', (e: MouseEvent) => {
+    // Only selections made in the article; not clicks on the toolbar or panels
+    if (!articleEl.contains(e.target as Node)) return
+    // Let the selection settle after the click
+    setTimeout(() => maybeShowHighlightMenu(articleEl), 0)
+  })
+  // Capture phase, so Esc closes the menu before the toolbar's handler exits the Reader
+  window.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key === 'Escape' && !hlMenu!.classList.contains('caom-hidden')) {
+      hideHighlightMenu()
+      e.stopImmediatePropagation()
+    }
+  }, true)
+  // The menu is placed once, in viewport coordinates
+  window.addEventListener('scroll', () => hideHighlightMenu(), { passive: true })
+}
+
+function applyHighlightColors(): void {
+  if (!opts) return
+  // Names and colors are validated (chai-types.ts), so they are safe in CSS
+  const css = opts.chaiTypes
+    .map(t => `html.caom-reader-active .caom-reader-article mark[data-chai-type][data-chai-type="${t.name}"] { background: ${t.color}; }`)
+    .join('\n')
+  msgManager.sendToBg({ type: 'insertReaderCss', css })
+}
+
+function buildHighlightMenu(): HTMLElement {
+  const menu = document.createElement('div')
+  menu.className = 'caom-hl-menu caom-hidden'
+
+  const types = document.createElement('div')
+  types.className = 'caom-hl-types'
+  for (const t of opts?.chaiTypes ?? []) {
+    const btn = document.createElement('button')
+    btn.className = 'caom-hl-type'
+    btn.textContent = t.name
+    btn.style.background = t.color
+    btn.addEventListener('click', () => applyHighlight(t.name))
+    types.appendChild(btn)
+  }
+  menu.appendChild(types)
+
+  hlNoteInput = document.createElement('input')
+  hlNoteInput.type = 'text'
+  hlNoteInput.className = 'caom-hl-input'
+  hlNoteInput.placeholder = 'Note (optional)'
+  menu.appendChild(hlNoteInput)
+
+  hlCustomInput = document.createElement('input')
+  hlCustomInput.type = 'text'
+  hlCustomInput.className = 'caom-hl-input'
+  hlCustomInput.placeholder = 'Custom type, then Enter'
+  hlCustomInput.addEventListener('input', () => {
+    const v = hlCustomInput!.value.trim()
+    hlCustomInput!.classList.toggle('caom-hl-invalid', v !== '' && !isValidChaiTypeName(v))
+  })
+  hlCustomInput.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key !== 'Enter') return
+    e.preventDefault()
+    const v = hlCustomInput!.value.trim()
+    if (isValidChaiTypeName(v)) applyHighlight(v)
+  })
+  menu.appendChild(hlCustomInput)
+
+  return menu
+}
+
+function maybeShowHighlightMenu(articleEl: HTMLElement): void {
+  const sel = window.getSelection()
+  if (!sel || sel.rangeCount === 0) return
+  const range = tightenRange(sel.getRangeAt(0))
+  if (!range || checkHighlightRange(range, articleEl) !== null) return
+  pendingRange = range
+  showHighlightMenuAt(range.getBoundingClientRect())
+}
+
+function showHighlightMenuAt(rect: DOMRect): void {
+  if (!hlMenu) return
+  hlMenu.classList.remove('caom-hidden')
+  const gap = 8
+  const w = hlMenu.offsetWidth
+  const h = hlMenu.offsetHeight
+  // Below the selection, or above it when there is no room
+  let top = rect.bottom + gap
+  if (top + h > window.innerHeight - gap) top = Math.max(gap, rect.top - h - gap)
+  const left = Math.min(Math.max(gap, rect.left), window.innerWidth - w - gap)
+  hlMenu.style.top = `${top}px`
+  hlMenu.style.left = `${left}px`
+}
+
+function hideHighlightMenu(): void {
+  if (!hlMenu || hlMenu.classList.contains('caom-hidden')) return
+  hlMenu.classList.add('caom-hidden')
+  hlNoteInput!.value = ''
+  hlCustomInput!.value = ''
+  hlCustomInput!.classList.remove('caom-hl-invalid')
+  pendingRange = null
+}
+
+function applyHighlight(type: string): void {
+  if (!pendingRange) return
+  const marks = wrapRange(pendingRange, { type, note: hlNoteInput?.value ?? '' })
+  // The note bubble follows the last piece only
+  const last = marks[marks.length - 1]
+  const bubble = last ? addNoteBubble(last) : null
+  // reader.css reserves this height above the line, so only that line grows
+  if (bubble) last.style.setProperty('--caom-note-h', `${bubble.offsetHeight}px`)
+  window.getSelection()?.removeAllRanges()
+  hideHighlightMenu()
 }
