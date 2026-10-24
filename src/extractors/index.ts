@@ -13,6 +13,7 @@
  * So these run after Defuddle and replace the fields they know better.
  */
 
+import { extractGoogleAiMode, GOOGLE_AI_MODE_PATTERNS } from './google-ai-mode'
 import { extractZhihu, ZHIHU_PATTERNS } from './zhihu'
 
 export interface SiteExtraction {
@@ -25,6 +26,7 @@ export interface SiteExtraction {
 
 const SITES: { patterns: RegExp[], extract: (doc: Document) => SiteExtraction | null }[] = [
     { patterns: ZHIHU_PATTERNS, extract: extractZhihu },
+    { patterns: GOOGLE_AI_MODE_PATTERNS, extract: extractGoogleAiMode },
 ]
 
 /** The extraction for this page from one of our site extractors, or null. */

@@ -1,5 +1,14 @@
 # Changes: phase-reader-highlight-20261021
 
+## 2026-10-24 · task013
+
+- Add `src/extractors/google-ai-mode.ts`：`GOOGLE_AI_MODE_PATTERNS`（`google.<tld>/search` 且 `udm=50`）；`cleanAiModeAnswer`（删除 `script`/`button`/`svg`、`[role=dialog]`、`[role=button]`、`[aria-live]`、`[aria-hidden=true]`、内联 `display:none`、`h3[data-ignore-copy]`、`.DHPVt` 引用、`.DBd2Wb` 免责声明和反馈、`.ofHStc` Shared 面板、注释；展开 Google 自己的 `<mark>`；`[role=heading]` 改为 `h3`–`h6`；只含行内内容的 `div` 改为 `p`，其它 `div` 和 `span` 展开；只保留 `href`/`src`/`alt`/`colspan`/`rowspan`；删空段落）；`extractGoogleAiMode`（每个 `[data-scope-id=turn]` 输出 `h2` 问题 + 回答；问题取自 `h3[data-ignore-copy]` 去掉 “AI Mode reply for ”；标题取 `h1` 去掉 “AI Mode Conversation: ”；站点 “Google AI Mode”）。
+- Modify `src/extractors/index.ts`：注册 Google AI Mode。
+- Add `test/google-ai-mode.test.ts`：4 个用例，样本取自真实页面的标记。
+- 验证：`npm test` 66 pass；`npm run build` 通过，`dist/defuddle.js` 327 KB。在真实 AI Mode 页面（单轮对话）注入构建后的 `dist/defuddle.js`，`parse()` 和 `parseAsync()` 输出不含 Shared、0 files、Show all、账号信息、免责声明、`jsaction`、`class=`。
+- 限制：只依赖 Google 混淆后的 class 名（`.DHPVt`、`.DBd2Wb`、`.ofHStc`）和 `data-scope-id`/`data-subtree` 属性，Google 改版后可能失效，届时退回 Defuddle 的通用结果。多轮对话的结构按单轮推断，未实测。引用来源链接没有保留（页面上是按钮，没有 URL）。
+- 用户反馈中的 Reader 页脚重复出现两次，未排查。
+
 ## 2026-10-23 · task012
 
 - Add `src/extractors/zhihu.ts`：`ZHIHU_PATTERNS`（仅 `zhuanlan.zhihu.com/p/ID`）；`cleanZhihuBody`（去掉搜索链接的星形 `svg` 并把 `a.RichContent-EntityWord` 还原为文字；`link.zhihu.com/?target=` 还原为目标 URL；删 `a span.invisible`，展开 `span.visible`/`span.ellipsis`；`img` 用 `data-original`；展开 `.RichText-ConditionalImagePortal`；删 `p.ztext-empty-paragraph`）；`extractZhihu`（正文、标题 `h1.Post-Title`、作者 `.AuthorInfo-name .UserLink-link`、站点“知乎专栏”、发布日期取自 `.ContentItem-time`）。
