@@ -2,7 +2,7 @@ import './setup-dom'
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { html2org } from '../src/html2org'
-import { addNoteBubble, checkHighlightRange, noteBubbleOf, tightenRange, wrapRange } from '../src/reader/highlight'
+import { addNoteBubble, checkHighlightRange, highlightPieces, noteBubbleOf, removeHighlight, tightenRange, updateHighlight, wrapRange } from '../src/reader/highlight'
 import { articleHtmlForExport } from '../src/reader/article-dom'
 
 const convert = (html: string) => html2org.convert(html, {})
@@ -189,4 +189,35 @@ test('part of inline code is wrapped inside the code element', () => {
   const ms = wrapRange(select(el, 'tools', 'tools'), { type: 'key', note: '' })
   assert.equal(ms.length, 1)
   assert.equal(ms[0].parentElement!.tagName, 'CODE')
+})
+
+test('updateHighlight changes type and note on every piece, and moves the bubble', () => {
+  const el = article('<p>a b</p><p>c d</p>')
+  const ms = wrapRange(select(el, 'b', 'c'), { type: 'key', note: 'old' })
+  addNoteBubble(ms[ms.length - 1])
+  const id = ms[0].getAttribute('data-chai-id')!
+  const bubble = updateHighlight(el, id, { type: 'idea', note: ' new  note ' })!
+  assert.deepEqual(highlightPieces(el, id).map(m => m.getAttribute('data-chai-type')), ['idea', 'idea'])
+  assert.equal(el.querySelectorAll('.caom-chai-note').length, 1)
+  assert.equal(bubble.getAttribute('data-note'), 'new note')
+  assert.match(convert(articleHtmlForExport(el)), /#\+BEGIN_CHAI :type idea :note "new note"/)
+})
+
+test('updateHighlight with an empty note drops the note and its bubble', () => {
+  const el = article('<p>one two three</p>')
+  const [m] = wrapRange(select(el, 'two', 'two'), { type: 'key', note: 'n' })
+  addNoteBubble(m)
+  assert.equal(updateHighlight(el, m.getAttribute('data-chai-id')!, { type: 'key', note: '' }), null)
+  assert.equal(el.querySelector('.caom-chai-note'), null)
+  assert.equal(convert(articleHtmlForExport(el)), 'one [[chai:key][two]] three')
+})
+
+test('removeHighlight restores the original markup', () => {
+  const before = '<p>x 属于 <code>ctx.tools</code> ，<em>y</em> z</p><p>w</p>'
+  const el = article(before)
+  const ms = wrapRange(select(el, '属于', 'w'), { type: 'key', note: 'n' })
+  addNoteBubble(ms[ms.length - 1])
+  removeHighlight(el, ms[0].getAttribute('data-chai-id')!)
+  assert.equal(el.innerHTML, before)
+  assert.equal(el.querySelector('p')!.childNodes[0].nodeValue, 'x 属于 ')
 })

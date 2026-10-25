@@ -635,6 +635,34 @@ html.caom-reader-active .caom-hl-type:hover {
   filter: brightness(0.92);
 }
 
+/* The highlight's current type, when the menu edits a highlight */
+html.caom-reader-active .caom-hl-type.caom-hl-current {
+  outline: 2px solid var(--caom-text);
+  outline-offset: 1px;
+}
+
+html.caom-reader-active .caom-hl-delete {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--caom-border);
+  border-radius: 4px;
+  background: transparent;
+  color: #c62828;
+  font: 13px -apple-system, BlinkMacSystemFont, sans-serif;
+  cursor: pointer;
+}
+
+html.caom-reader-active .caom-hl-delete.caom-hidden {
+  display: none;
+}
+
+/* Highlights open the edit menu on click */
+html.caom-reader-active .caom-reader-article mark[data-chai-id] {
+  cursor: pointer;
+}
+
 html.caom-reader-active .caom-hl-input {
   border: 1px solid var(--caom-border);
   border-radius: 6px;

@@ -1,5 +1,6 @@
 # CHANGE Index
 
+- 2026-10-24 · phase-reader-highlight-20261021 · task008 点击已有高亮：改 type、改批注、删除 → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`
 - 2026-10-24 · phase-reader-highlight-20261021 · task013 Google AI Mode 站点提取 → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`
 - 2026-10-23 · phase-reader-highlight-20261021 · task012 知乎专栏文章站点提取 → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`
 - 2026-10-23 · phase-reader-highlight-20261021 · task011 保存文件名清理（issue002） → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`

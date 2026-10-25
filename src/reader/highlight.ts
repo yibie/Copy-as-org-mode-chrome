@@ -215,3 +215,41 @@ export function wrapRange(range: Range, spec: HighlightSpec): HTMLElement[] {
     return mark
   })
 }
+
+/** The pieces of one highlight, in document order. */
+export function highlightPieces(root: ParentNode, id: string): HTMLElement[] {
+  return Array.from(root.querySelectorAll<HTMLElement>('mark[data-chai-id]'))
+    .filter(m => m.getAttribute('data-chai-id') === id)
+}
+
+function removeNoteBubble(pieces: HTMLElement[]): void {
+  pieces.forEach(m => {
+    m.querySelectorAll(`.${NOTE_BUBBLE_CLASS}`).forEach(b => b.remove())
+    m.style.removeProperty('--caom-note-h')
+    if (m.getAttribute('style') === '') { m.removeAttribute('style') }
+  })
+}
+
+/** Change a highlight's type and note; returns its new note bubble, if it has a note. */
+export function updateHighlight(root: ParentNode, id: string, spec: HighlightSpec): HTMLElement | null {
+  const pieces = highlightPieces(root, id)
+  if (pieces.length === 0) { return null }
+  const note = spec.note.replace(/\s+/g, ' ').trim()
+  removeNoteBubble(pieces)
+  pieces.forEach(m => {
+    m.setAttribute('data-chai-type', spec.type)
+    if (note) { m.setAttribute('data-chai-note', note) } else { m.removeAttribute('data-chai-note') }
+  })
+  return addNoteBubble(pieces[pieces.length - 1])
+}
+
+/** Remove a highlight and its note, leaving the text as it was. */
+export function removeHighlight(root: ParentNode, id: string): void {
+  const pieces = highlightPieces(root, id)
+  removeNoteBubble(pieces)
+  pieces.forEach(m => {
+    const parent = m.parentNode
+    m.replaceWith(...Array.from(m.childNodes))
+    parent?.normalize()
+  })
+}

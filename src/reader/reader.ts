@@ -9,7 +9,7 @@
 import { storageManager, CopyAsOrgModeOptions } from '../options'
 import { msgManager, SavedPage } from '../common'
 import { decorateArticle, articleHtmlForExport } from './article-dom'
-import { addNoteBubble, checkHighlightRange, tightenRange, wrapRange } from './highlight'
+import { addNoteBubble, checkHighlightRange, highlightPieces, removeHighlight, tightenRange, updateHighlight, wrapRange } from './highlight'
 import { isValidChaiTypeName } from '../chai-types'
 
 declare global {
@@ -855,10 +855,15 @@ function saveAsOrg(withImages: boolean): void {
 let hlMenu: HTMLElement | null = null
 let hlNoteInput: HTMLInputElement | null = null
 let hlCustomInput: HTMLInputElement | null = null
+let hlDeleteBtn: HTMLButtonElement | null = null
+let hlArticle: HTMLElement | null = null
 /** The selection the open menu acts on; inputs in the menu take the focus and clear the live selection */
 let pendingRange: Range | null = null
+/** The highlight the open menu edits, when it was opened by clicking a highlight */
+let editingId: string | null = null
 
 function installHighlighting(articleEl: HTMLElement): void {
+  hlArticle = articleEl
   applyHighlightColors()
   hlMenu = buildHighlightMenu()
   document.body.appendChild(hlMenu)
@@ -869,8 +874,9 @@ function installHighlighting(articleEl: HTMLElement): void {
   document.addEventListener('mouseup', (e: MouseEvent) => {
     // Only selections made in the article; not clicks on the toolbar or panels
     if (!articleEl.contains(e.target as Node)) return
+    const target = e.target as Element
     // Let the selection settle after the click
-    setTimeout(() => maybeShowHighlightMenu(articleEl), 0)
+    setTimeout(() => maybeShowHighlightMenu(articleEl, target), 0)
   })
   // Capture phase, so Esc closes the menu before the toolbar's handler exits the Reader
   window.addEventListener('keydown', (e: KeyboardEvent) => {
@@ -912,6 +918,13 @@ function buildHighlightMenu(): HTMLElement {
   hlNoteInput.type = 'text'
   hlNoteInput.className = 'caom-hl-input'
   hlNoteInput.placeholder = 'Note (optional)'
+  // Editing a highlight: Enter keeps its type and saves the note
+  hlNoteInput.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key !== 'Enter' || !editingId) return
+    e.preventDefault()
+    const type = highlightPieces(hlArticle!, editingId)[0]?.getAttribute('data-chai-type')
+    if (type) applyHighlight(type)
+  })
   menu.appendChild(hlNoteInput)
 
   hlCustomInput = document.createElement('input')
@@ -930,16 +943,50 @@ function buildHighlightMenu(): HTMLElement {
   })
   menu.appendChild(hlCustomInput)
 
+  hlDeleteBtn = document.createElement('button')
+  hlDeleteBtn.className = 'caom-hl-delete'
+  hlDeleteBtn.textContent = 'Remove highlight'
+  hlDeleteBtn.addEventListener('click', () => {
+    if (editingId) removeHighlight(hlArticle!, editingId)
+    hideHighlightMenu()
+  })
+  menu.appendChild(hlDeleteBtn)
+
   return menu
 }
 
-function maybeShowHighlightMenu(articleEl: HTMLElement): void {
+function maybeShowHighlightMenu(articleEl: HTMLElement, target: Element): void {
   const sel = window.getSelection()
-  if (!sel || sel.rangeCount === 0) return
+  // A click (no selection) on a highlight opens the menu to edit it
+  if (!sel || sel.isCollapsed) {
+    const mark = target.closest?.('mark[data-chai-id]')
+    if (mark && articleEl.contains(mark)) showEditMenu(mark.getAttribute('data-chai-id')!)
+    return
+  }
   const range = tightenRange(sel.getRangeAt(0))
   if (!range || checkHighlightRange(range, articleEl) !== null) return
   pendingRange = range
+  setMenuMode(null)
   showHighlightMenuAt(range.getBoundingClientRect())
+}
+
+function showEditMenu(id: string): void {
+  const pieces = highlightPieces(hlArticle!, id)
+  if (pieces.length === 0) return
+  setMenuMode(id)
+  hlNoteInput!.value = pieces[0].getAttribute('data-chai-note') ?? ''
+  const rect = pieces[pieces.length - 1].getBoundingClientRect()
+  showHighlightMenuAt(rect)
+}
+
+/** Create mode (null) or edit mode for one highlight: marks its type and shows Remove */
+function setMenuMode(id: string | null): void {
+  editingId = id
+  const type = id ? highlightPieces(hlArticle!, id)[0]?.getAttribute('data-chai-type') : null
+  hlMenu!.querySelectorAll('.caom-hl-type').forEach(b => {
+    b.classList.toggle('caom-hl-current', b.textContent === type)
+  })
+  hlDeleteBtn!.classList.toggle('caom-hidden', !id)
 }
 
 function showHighlightMenuAt(rect: DOMRect): void {
@@ -963,16 +1010,26 @@ function hideHighlightMenu(): void {
   hlCustomInput!.value = ''
   hlCustomInput!.classList.remove('caom-hl-invalid')
   pendingRange = null
+  editingId = null
 }
 
 function applyHighlight(type: string): void {
-  if (!pendingRange) return
-  const marks = wrapRange(pendingRange, { type, note: hlNoteInput?.value ?? '' })
-  // The note bubble follows the last piece only
-  const last = marks[marks.length - 1]
-  const bubble = last ? addNoteBubble(last) : null
+  const note = hlNoteInput?.value ?? ''
+  let last: HTMLElement | undefined
+  let bubble: HTMLElement | null = null
+  if (editingId) {
+    bubble = updateHighlight(hlArticle!, editingId, { type, note })
+    const pieces = highlightPieces(hlArticle!, editingId)
+    last = pieces[pieces.length - 1]
+  } else {
+    if (!pendingRange) return
+    const marks = wrapRange(pendingRange, { type, note })
+    // The note bubble follows the last piece only
+    last = marks[marks.length - 1]
+    bubble = last ? addNoteBubble(last) : null
+  }
   // reader.css reserves this height above the line, so only that line grows
-  if (bubble) last.style.setProperty('--caom-note-h', `${bubble.offsetHeight}px`)
+  if (bubble && last) last.style.setProperty('--caom-note-h', `${bubble.offsetHeight}px`)
   window.getSelection()?.removeAllRanges()
   hideHighlightMenu()
 }

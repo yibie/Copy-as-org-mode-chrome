@@ -1,5 +1,13 @@
 # Changes: phase-reader-highlight-20261021
 
+## 2026-10-24 · task008
+
+- Add `src/reader/highlight.ts`：`highlightPieces(root, id)`；`updateHighlight(root, id, { type, note })`（所有片段改属性，空批注删属性，旧气泡删掉、在最后一段重建）；`removeHighlight(root, id)`（删气泡，展开所有片段，父节点 `normalize()`）。
+- Modify `src/reader/reader.ts`：在文章里单击高亮（无选区）打开同一菜单的编辑模式：当前 type 加外框，批注框预填，显示 “Remove highlight”。点 type 改 type 并保存批注；批注框回车只保存批注；自定义 type 回车改为该 type。`setMenuMode`、`showEditMenu`、`editingId`。
+- Modify `src/reader/reader.css`：`.caom-hl-current`、`.caom-hl-delete`；高亮显示手形光标。
+- spec User Flows「编辑高亮」细化。
+- 验证：新增 3 个测试（改 type 和批注后导出为新 type/批注；清空批注后无气泡、导出无批注；删除后 HTML 与原文逐字相同，含行内代码和斜体）。`npm test` 69 pass；`npm run build` 通过。未在浏览器中验证。
+
 ## 2026-10-24 · task013
 
 - Add `src/extractors/google-ai-mode.ts`：`GOOGLE_AI_MODE_PATTERNS`（`google.<tld>/search` 且 `udm=50`）；`cleanAiModeAnswer`（删除 `script`/`button`/`svg`、`[role=dialog]`、`[role=button]`、`[aria-live]`、`[aria-hidden=true]`、内联 `display:none`、`h3[data-ignore-copy]`、`.DHPVt` 引用、`.DBd2Wb` 免责声明和反馈、`.ofHStc` Shared 面板、注释；展开 Google 自己的 `<mark>`；`[role=heading]` 改为 `h3`–`h6`；只含行内内容的 `div` 改为 `p`，其它 `div` 和 `span` 展开；只保留 `href`/`src`/`alt`/`colspan`/`rowspan`；删空段落）；`extractGoogleAiMode`（每个 `[data-scope-id=turn]` 输出 `h2` 问题 + 回答；问题取自 `h3[data-ignore-copy]` 去掉 “AI Mode reply for ”；标题取 `h1` 去掉 “AI Mode Conversation: ”；站点 “Google AI Mode”）。
