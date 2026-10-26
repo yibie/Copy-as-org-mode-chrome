@@ -21,11 +21,11 @@
 
 - task007 [x] 选区浮动菜单：type 按钮（按配置顺序、配置颜色）、批注框、自定义 type 输入；点击后按文本节点切分包裹 `<mark data-chai-id data-chai-type data-chai-note>`；拒绝空选区、重叠已有高亮、含图片/表格/代码块的选区；Esc/点外部关闭。验证：手动在 3 个真实文章页上划线，含跨 `<em>`、跨段落。影响：`src/reader/reader.ts`、`src/reader/reader.css`。
 - task008 [x] 点击已有高亮：同一菜单，改 type、改批注、删除（解包 `<mark>` 并 `normalize()`）。验证：手动操作后 Copy 结果对应变化。影响：`src/reader/reader.ts`。
-- task009 [ ] 退出确认：有自上次导出以来的高亮改动时，退出（按钮/Esc）弹确认。验证：手动——无高亮直接退出；有改动弹确认；导出后再退出不弹。影响：`src/reader/reader.ts`。
+- task009 [x] 退出确认：有自上次导出以来的高亮改动时，退出（按钮/Esc）弹确认。验证：手动——无高亮直接退出；有改动弹确认；导出后再退出不弹。影响：`src/reader/reader.ts`。（2026-10-26：构建与测试通过；未在浏览器中验证）
 
 ## M5 发布
 
-- task010 [ ] README 增加高亮说明；版本号升到 1.6.0（`package.json`、`manifest.json`）；按 spec Acceptance Criteria 全量回归。验证：逐条勾选 Acceptance Criteria。影响：`README*`、`package.json`、`manifest.json`。
+- task010 [x] README 增加高亮说明；版本号升到 1.6.0（`package.json`、`manifest.json`）；按 spec Acceptance Criteria 全量回归。验证：逐条勾选 Acceptance Criteria。影响：`README*`、`package.json`、`manifest.json`。
 
 ## 插入任务（issue / 站点适配）
 

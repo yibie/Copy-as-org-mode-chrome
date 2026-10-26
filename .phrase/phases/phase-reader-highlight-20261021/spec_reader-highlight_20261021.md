@@ -80,7 +80,7 @@ Reader 对 `outdated` 仍加删除线，用户自己加这个 type 时生效。
 3. 无高亮时，Copy 的输出与 v1.5.0 一致。Save / Save (with images) 的正文与 Copy 同源（Reader 当前文章 DOM），不再由 background 重新提取；与 v1.5.0 在 Reader 中 Save 的输出可能不同（v1.5.0 是对 Reader 页面重跑 Defuddle，再做宽松的标题去重）。
 
 ### 退出
-1. 有高亮且自上次导出后有改动时，退出 Reader View（按钮或 Esc）先弹确认。
+1. 自上次 Copy / Save 后高亮有改动（新建、改 type 或批注、删除）时，退出 Reader View（✕ 按钮、Esc、快捷键、右键菜单）先在 Reader 内弹确认：“Keep reading” / “Discard and exit”。确认框打开时 Esc 等于 Keep reading。
 2. 取消 → 留在 Reader View；确认 → 退出。
 3. 退出（按钮、Esc、再次按快捷键或右键菜单）不刷新网页：Reader 淡出并下移，覆盖层移除，网页原样保留（滚动位置、表单、播放状态）。进入时 Reader 淡入并上移。系统开启“减少动态效果”时不做动画。
 4. Reader 中文章链接在新标签页打开；`#…` 链接（脚注、目录）在 Reader 内滚动。Reader 里右键不提供 Copy / Save 菜单，用工具栏。

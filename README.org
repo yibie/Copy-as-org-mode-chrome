@@ -20,6 +20,52 @@ You trigger it from the right‑click context menu. Five operations:
 
 A keyboard shortcut (~Ctrl+Alt+O~) is also available for "Copy Selection".
 
+** Reader View with Highlights
+
+Read the article without clutter, mark what matters while you read, and
+export it as Org text where your highlights are already [[https://github.com/yibie/org-zettel-ref-mode][chai]] links —
+so you do not read the page a second time in Emacs to mark it up.
+
+*Open and close*: right‑click → *Reader View*, or bind =toggle-reader-mode=
+at =chrome://extensions/shortcuts=. Exit with ✕, Esc, or the same shortcut.
+The Reader opens over the page with a short fade; the page underneath is
+not touched, so closing it leaves your scroll position, forms and video
+where they were (no reload).
+
+*Highlight*: select text in the Reader, then pick a type in the menu that
+appears. You can add a note first; it shows as a bubble above the
+highlight. Click a highlight to change its type or note, or to remove it.
+
+*Export*: the toolbar's Org menu has *Copy as Org-Mode*, *Save as Org-Mode*
+and *Save as Org-Mode (with images)*. Highlights come out in chai's syntax:
+
+: [[chai:key][highlighted text]]
+: [[chai:question:my note][highlighted text]]
+
+A highlight that spans paragraphs becomes a block:
+
+: #+BEGIN_CHAI :type key :note "my note"
+: first paragraph ...
+: second paragraph ...
+: #+END_CHAI
+
+Brackets in the text and note are escaped the way Org's own
+=org-link-make-string= does it, so chai reads every link back intact.
+
+*Types*: the menu lists the types from Options → *Reader Highlights (chai)*.
+The defaults are =key=, =idea=, =question= and =fact=; add, remove, rename,
+reorder or recolor them there. Use the same names as =chai-highlight-types=
+in Emacs. A type chai does not know still exports; chai shows it as a plain
+link.
+
+*Limits*:
+- Highlights live only while the Reader is open. If you changed highlights
+  since the last Copy or Save, exiting asks you first.
+- Selections that include images, tables, code blocks or video, overlap an
+  existing highlight, or cross into a list item cannot be highlighted.
+- Images in the Reader load from the extension page, so a site that blocks
+  hotlinking may not show some images. Saving with images is not affected.
+
 ** Intelligent Content Extraction
 
 This is the most important feature. When you save a page, the extension does
@@ -68,6 +114,7 @@ them, you get clean, site‑structured output instead of raw DOM HTML.
 | Claude   | Clean conversation thread      |
 | Gemini   | Clean conversation thread      |
 | Grok     | Clean conversation thread      |
+| Google AI Mode | Each turn as a question heading + answer, without the page's buttons, panels and account info |
 
 **Social Media**
 | Site       | What gets extracted                                       |
@@ -96,6 +143,7 @@ them, you get clean, site‑structured output instead of raw DOM HTML.
 | GitHub      | README, Issues, PRs             |
 | LeetCode    | Problem description + examples  |
 | C2 Wiki     | Wiki page text                  |
+| Zhihu (知乎专栏) | Article body, author, date, original images; no vote counts, search links or redirect links |
 
 When none of the above match, Defuddle falls back to its general‑purpose
 content extraction algorithm — which is significantly more aggressive at
@@ -150,7 +198,7 @@ both the Org file and the images folder.
 
 ** Installation
 
-1. Download =copy-as-org-mode-v1.4.0.zip= from the [[https://github.com/yibie/Copy-as-org-mode-chrome/releases][Releases page]].
+1. Download =copy-as-org-mode-v1.6.0.zip= from the [[https://github.com/yibie/Copy-as-org-mode-chrome/releases][Releases page]].
 2. Unzip it.
 3. Open Chrome → go to =chrome://extensions=.
 4. Enable *Developer mode* (toggle in the top‑right).
@@ -169,6 +217,8 @@ Then load the =dist/= directory as an unpacked extension.
 
 | Version | Date | Changes |
 |---------+------+---------|
+| 1.6.0 | 2026-10-26 | Reader View highlights with chai export (inline links and =#+BEGIN_CHAI= blocks), notes, editable type table in Options, exit confirm; Reader opens as an overlay with enter/exit animation and no reload; Zhihu and Google AI Mode extractors; file names no longer fail on invisible characters |
+| 1.5.0 | 2026-07-11 | Reader View: outline, reading settings, Org copy/save from the toolbar |
 | 1.4.0 | 2026-06-23 | Defuddle upgrade 0.6 → 0.19, 26 site extractors (YouTube transcript, Twitter, Reddit, GitHub, HN, ChatGPT, Claude, etc.), language setting for extraction, async API‑fetch pipeline |
 | 1.3.0 | — | Save Page as Org-Mode with Defuddle extraction, image saving, metadata headers, smart filename generation |
 | 1.2.0 | — | Copy selection commands, keyboard shortcuts |

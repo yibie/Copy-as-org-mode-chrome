@@ -1,5 +1,7 @@
 # CHANGE Index
 
+- 2026-10-26 · phase-reader-highlight-20261021 · task010 README 与版本号 1.6.0 → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`
+- 2026-10-26 · phase-reader-highlight-20261021 · task009 退出 Reader 前确认未导出的高亮 → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`
 - 2026-10-24 · phase-reader-highlight-20261021 · task014 Reader 改为扩展 iframe 覆盖层，退出不刷新，进出有动画 → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`
 - 2026-10-24 · phase-reader-highlight-20261021 · task008 点击已有高亮：改 type、改批注、删除 → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`
 - 2026-10-24 · phase-reader-highlight-20261021 · task013 Google AI Mode 站点提取 → `../phases/phase-reader-highlight-20261021/change_reader-highlight_20261021.md`
