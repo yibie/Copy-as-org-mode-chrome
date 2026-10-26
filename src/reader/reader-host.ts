@@ -72,6 +72,8 @@ interface Overlay {
   sheet: HTMLElement
   frame: HTMLIFrameElement
   readyTimer: number
+  /** The Reader frame has rendered and handles exit requests itself */
+  ready: boolean
   /** The page's inline overflow on <html>, restored on close */
   savedOverflow: [string, string]
 }
@@ -97,7 +99,11 @@ if (!window.__caomReaderHostLoaded) {
 }
 
 function toggleReader(): void {
-  if (overlay) {
+  if (overlay && overlay.ready) {
+    // The Reader confirms first when highlights would be lost, then asks to close
+    overlay.frame.focus()
+    overlay.frame.contentWindow?.postMessage({ type: 'caom-reader-exit' }, new URL(chrome.runtime.getURL('')).origin)
+  } else if (overlay) {
     closeReader()
   } else if (!opening) {
     opening = true
@@ -172,7 +178,7 @@ function mountOverlay(): void {
     notify('Reader View did not load')
   }, READY_TIMEOUT_MS)
   // Set before anything below can throw, so teardown() can undo it
-  overlay = { host, wrapper, sheet, frame, readyTimer, savedOverflow }
+  overlay = { host, wrapper, sheet, frame, readyTimer, ready: false, savedOverflow }
 
   // On <html>, not <body>: a transformed body would trap position: fixed
   document.documentElement.appendChild(host)
@@ -193,6 +199,7 @@ function onFrameMessage(e: MessageEvent): void {
   const type = e.data && e.data.type
   if (type === 'caom-reader-ready') {
     window.clearTimeout(overlay.readyTimer)
+    overlay.ready = true
     const { wrapper, frame } = overlay
     // Next frame, so the closed state paints first and the transition runs
     requestAnimationFrame(() => requestAnimationFrame(() => wrapper.classList.add('open')))

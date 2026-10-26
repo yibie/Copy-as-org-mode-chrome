@@ -679,3 +679,50 @@ html.caom-reader-active .caom-hl-input.caom-hl-invalid {
   outline: 2px solid #d32f2f;
 }
 
+
+/* Exit confirm (task009) */
+html.caom-reader-active .caom-exit-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 2147483647;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+html.caom-reader-active .caom-exit-confirm-box {
+  max-width: 360px;
+  margin: 16px;
+  padding: 16px;
+  background: var(--caom-bg);
+  color: var(--caom-text);
+  border: 1px solid var(--caom-border);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  font: 14px/1.5 -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+html.caom-reader-active .caom-exit-confirm-box p {
+  margin: 0 0 12px;
+}
+
+html.caom-reader-active .caom-exit-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+html.caom-reader-active .caom-exit-confirm-actions button {
+  padding: 4px 12px;
+  border: 1px solid var(--caom-border);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+html.caom-reader-active .caom-exit-confirm-actions .caom-exit-confirm-discard {
+  color: #c62828;
+}

@@ -79,6 +79,67 @@ function requestClose(): void {
   window.parent.postMessage({ type: 'caom-reader-close' }, '*')
 }
 
+/** Highlights changed since the last Copy or Save; they are lost on exit */
+let unexported = false
+let exitConfirm: HTMLElement | null = null
+
+/** Exit from the ✕ button, Esc, or the host (shortcut, context menu); confirms first when highlights would be lost */
+function exitReader(): void {
+  if (unexported) {
+    showExitConfirm()
+  } else {
+    requestClose()
+  }
+}
+
+// The host asks before closing, so a shortcut or menu exit also confirms
+window.addEventListener('message', (e: MessageEvent) => {
+  if (e.source === window.parent && e.data && e.data.type === 'caom-reader-exit') exitReader()
+})
+
+function showExitConfirm(): void {
+  if (exitConfirm) return
+  hideHighlightMenu()
+  const backdrop = document.createElement('div')
+  backdrop.className = 'caom-exit-confirm'
+  const box = document.createElement('div')
+  box.className = 'caom-exit-confirm-box'
+  box.setAttribute('role', 'alertdialog')
+  const text = document.createElement('p')
+  text.textContent = 'Your highlights have not been copied or saved since the last change. Exit and discard them?'
+  const actions = document.createElement('div')
+  actions.className = 'caom-exit-confirm-actions'
+  const keep = document.createElement('button')
+  keep.textContent = 'Keep reading'
+  keep.addEventListener('click', hideExitConfirm)
+  const discard = document.createElement('button')
+  discard.className = 'caom-exit-confirm-discard'
+  discard.textContent = 'Discard and exit'
+  discard.addEventListener('click', () => {
+    hideExitConfirm()
+    requestClose()
+  })
+  actions.append(keep, discard)
+  box.append(text, actions)
+  backdrop.appendChild(box)
+  document.body.appendChild(backdrop)
+  exitConfirm = backdrop
+  keep.focus()
+}
+
+function hideExitConfirm(): void {
+  exitConfirm?.remove()
+  exitConfirm = null
+}
+
+// Capture phase, so Esc dismisses the confirm before the toolbar's handler sees it
+window.addEventListener('keydown', (e: KeyboardEvent) => {
+  if (e.key === 'Escape' && exitConfirm) {
+    hideExitConfirm()
+    e.stopImmediatePropagation()
+  }
+}, true)
+
 // This page is an extension page inside the overlay: links open in a new tab,
 // and fragment links scroll the Reader.
 function installLinkHandling(articleEl: HTMLElement): void {
@@ -355,7 +416,7 @@ function buildToolbar(): void {
   exitButton.textContent = '✕'
   exitButton.title = 'Exit Reader View'
   exitButton.addEventListener('click', () => {
-    requestClose()
+    exitReader()
   })
   toolbar.appendChild(exitButton)
 
@@ -447,7 +508,7 @@ function buildToolbar(): void {
         panel.classList.add('caom-hidden')
       } else {
         // Exit reader
-        requestClose()
+        exitReader()
       }
     }
   })
@@ -614,6 +675,7 @@ function copyAsOrg(): void {
     } else {
       msgManager.sendToBg({ type: 'copyStringToClipboard', org })
     }
+    unexported = false
   } catch (err) {
     console.error('[caom-reader] copyAsOrg error:', err)
     msgManager.sendToBg({
@@ -662,6 +724,7 @@ function saveAsOrg(withImages: boolean): void {
     } else {
       msgManager.sendToBg({ type: 'savePageAsOrg', page })
     }
+    unexported = false
   } catch (err) {
     console.error('[caom-reader] saveAsOrg error:', err)
     msgManager.sendToBg({
@@ -775,7 +838,10 @@ function buildHighlightMenu(): HTMLElement {
   hlDeleteBtn.className = 'caom-hl-delete'
   hlDeleteBtn.textContent = 'Remove highlight'
   hlDeleteBtn.addEventListener('click', () => {
-    if (editingId) removeHighlight(hlArticle!, editingId)
+    if (editingId) {
+      removeHighlight(hlArticle!, editingId)
+      unexported = true
+    }
     hideHighlightMenu()
   })
   menu.appendChild(hlDeleteBtn)
@@ -858,6 +924,7 @@ function applyHighlight(type: string): void {
   }
   // reader.css reserves this height above the line, so only that line grows
   if (bubble && last) last.style.setProperty('--caom-note-h', `${bubble.offsetHeight}px`)
+  unexported = true
   window.getSelection()?.removeAllRanges()
   hideHighlightMenu()
 }
