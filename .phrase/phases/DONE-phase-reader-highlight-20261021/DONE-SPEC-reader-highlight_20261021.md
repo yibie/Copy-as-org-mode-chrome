@@ -1,6 +1,6 @@
 # Spec: Reader View 高亮 + chai 格式导出
 
-来源：`pr-faq_reader-highlight_20261021.md`
+来源：`DONE-PR-FAQ-reader-highlight_20261021.md`
 
 ## Summary
 

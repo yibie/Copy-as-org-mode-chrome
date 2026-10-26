@@ -1,6 +1,6 @@
 # Tasks: Reader View 高亮 + chai 格式导出
 
-依据：`spec_reader-highlight_20261021.md`、`plan_reader-highlight_20261021.md`
+依据：`DONE-SPEC-reader-highlight_20261021.md`、`DONE-PLAN-reader-highlight_20261021.md`
 
 ## M1 导出管线
 
@@ -32,4 +32,4 @@
 - task011 [x] 修 issue002：保存文件名去掉不可见格式字符、首尾 `.`/空格，限制 200 字节；`#+TITLE`/`#+AUTHOR`/`#+KEYWORDS` 同步清理；图片扩展名只接受字母数字。验证：`test/org-filename.test.ts`；手动保存 https://zhuanlan.zhihu.com/p/2079219486700344366 成功（待用户确认）。影响：`src/org-filename.ts`、`src/background.ts`、`src/save_folder/save_folder.ts`、`src/html2org/commonmark-rules.ts`。
 - task012 [x] 知乎专栏文章站点提取：只取 `.Post-RichText`，去掉赞同数和发布信息，搜索链接还原为文字，`link.zhihu.com` 跳转还原，用原图。验证：`test/zhihu.test.ts`；在该知乎页面上运行构建后的 `dist/defuddle.js` 检查结果（已做）；用户在浏览器 Copy / Save（待确认）。影响：`src/extractors/`、`src/defuddle.ts`。
 - task013 [x] Google AI Mode（`google.*/search?…udm=50`）站点提取：每轮对话输出为“问题标题 + 回答”，去掉引用按钮、免责声明和反馈表单、Shared 面板、状态提示、隐藏节点和 Google 的属性。验证：`test/google-ai-mode.test.ts`；在真实 AI Mode 页面上运行构建后的 `dist/defuddle.js`（已做，单轮）；多轮对话和 Reader 显示待用户确认。影响：`src/extractors/`。
-- task014 [x] Reader 改为扩展 iframe 覆盖层（`adr_reader-iframe-overlay_20261024.md`）：宿主脚本在文档克隆上提取、补绝对 URL、建 top layer 覆盖层；iframe 页面运行现有 Reader；退出不刷新、还原网页滚动；进入淡入上移、退出反向，`prefers-reduced-motion` 不动画。验证：单元测试（克隆含 Shadow DOM、URL 补全）；手动——普通文章、知乎、github.com（严格 CSP）进入/退出，退出后网页状态保留；Copy、两种 Save、划线、批注、Esc、快捷键切换正常。影响：`src/reader/`、`src/background.ts`、`src/common.ts`、`webpack.config.js`、`manifest.json`。（2026-10-24：单元测试与构建通过；未在浏览器中验证）
+- task014 [x] Reader 改为扩展 iframe 覆盖层（`DONE-ADR-reader-iframe-overlay_20261024.md`）：宿主脚本在文档克隆上提取、补绝对 URL、建 top layer 覆盖层；iframe 页面运行现有 Reader；退出不刷新、还原网页滚动；进入淡入上移、退出反向，`prefers-reduced-motion` 不动画。验证：单元测试（克隆含 Shadow DOM、URL 补全）；手动——普通文章、知乎、github.com（严格 CSP）进入/退出，退出后网页状态保留；Copy、两种 Save、划线、批注、Esc、快捷键切换正常。影响：`src/reader/`、`src/background.ts`、`src/common.ts`、`webpack.config.js`、`manifest.json`。（2026-10-24：单元测试与构建通过；未在浏览器中验证）

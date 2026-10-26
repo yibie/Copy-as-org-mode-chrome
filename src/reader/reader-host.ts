@@ -8,7 +8,8 @@
  * Reader View host, injected into the page's top frame. It extracts the article
  * and shows the Reader (dist/reader.html) in a full-viewport iframe overlay. The
  * page itself is left alone, so exiting removes the overlay instead of
- * reloading. See adr_reader-iframe-overlay_20261024.md.
+ * reloading. See
+ * .phrase/phases/DONE-phase-reader-highlight-20261021/DONE-ADR-reader-iframe-overlay_20261024.md.
  */
 
 import { storageManager } from '../options'

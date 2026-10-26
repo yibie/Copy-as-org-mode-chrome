@@ -1,4 +1,4 @@
-# Changes: phase-reader-highlight-20261021
+# Changes: DONE-phase-reader-highlight-20261021
 
 ## 2026-10-26 · task010
 
@@ -17,7 +17,7 @@
 
 ## 2026-10-24 · task014
 
-- 决定：`adr_reader-iframe-overlay_20261024.md`。Reader 从“原地重建网页 + 刷新退出”改为扩展 iframe 覆盖层。
+- 决定：`DONE-ADR-reader-iframe-overlay_20261024.md`。Reader 从“原地重建网页 + 刷新退出”改为扩展 iframe 覆盖层。
 - Add `src/reader/extract.ts`：`ReaderArticle`（新增 `keywords`）；`cloneDocumentWithShadow`（克隆文档并把 open shadow root 的内容复制进克隆，替代原来直接改网页的 `flattenShadowDom`）；`absolutizeUrls`（`src`/`href`/`poster`/`data-src`/`srcset` 按网页 URL 补全，`#…` 不动）；`stripDuplicateTitle` 从 `reader.ts` 移来，改为纯函数。
 - Add `src/reader/reader-host.ts`（注入网页顶层 frame）：`toggleReaderMode` 开关；在克隆上跑 Defuddle；建 `<caom-reader-overlay>`（内联 `!important` 样式、`popover="manual"` 进 top layer、closed shadow root、`adoptedStyleSheets`）；锁网页滚动并在退出时还原；回应 `getReaderArticle`；只接受 `event.source === iframe.contentWindow` 的 `caom-reader-ready` / `caom-reader-close`；进入淡入上移 16px、退出反向，220ms，`prefers-reduced-motion` 不动画；5 秒未就绪则移除并通知；退出 400ms 兜底。
 - Add `src/reader/reader.html`；`webpack.config.js` 新增 `reader-host` 入口和 `reader.html`（chunk `reader`）。
@@ -193,7 +193,7 @@
 
 ## 2026-10-21
 
-- Add `.phrase/phases/phase-reader-highlight-20261021/`：`pr-faq_*`、`spec_*`、`plan_*`、`task_*`、`change_*`。
+- Add `.phrase/phases/DONE-phase-reader-highlight-20261021/`：`pr-faq_*`、`spec_*`、`plan_*`、`task_*`、`change_*`。
   - PR/FAQ 经用户确认定稿；spec/plan 由其拆出。
   - 新增 task001–task010（均未开始）。
   - 无代码改动，无行为影响。

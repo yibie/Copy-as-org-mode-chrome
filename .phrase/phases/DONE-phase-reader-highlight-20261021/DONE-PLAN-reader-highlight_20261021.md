@@ -1,6 +1,6 @@
 # Plan: Reader View 高亮 + chai 格式导出
 
-依据：`spec_reader-highlight_20261021.md`
+依据：`DONE-SPEC-reader-highlight_20261021.md`
 目标版本：v1.6.0
 
 ## Milestones
@@ -10,7 +10,7 @@
 3. **M3 type 配置**：Options 页 chai type 表。（task006）
 4. **M4 交互**：选区浮动菜单、编辑已有高亮、退出确认。（task007–task009）
 5. **M5 发布**：README、版本号、全量回归。（task010）
-6. **M6 Reader 覆盖层**：Reader 改为扩展 iframe 覆盖层，原网页不改动，退出不刷新，进出有动画。（task014，见 `adr_reader-iframe-overlay_20261024.md`）
+6. **M6 Reader 覆盖层**：Reader 改为扩展 iframe 覆盖层，原网页不改动，退出不刷新，进出有动画。（task014，见 `DONE-ADR-reader-iframe-overlay_20261024.md`）
 
 先做 M1/M2：导出是本期风险最大的部分，交互可以在管线验证后再接上。
 
