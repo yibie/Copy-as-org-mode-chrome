@@ -8,6 +8,8 @@ html.caom-reader-active {
   --caom-accent: #4a72b8;
   --caom-border: #e4e4e0;
   color-scheme: light;
+  /* The Reader is an iframe over the page: keep scrolling from chaining to it */
+  overscroll-behavior: none;
 }
 
 html.caom-reader-active.caom-theme-light {

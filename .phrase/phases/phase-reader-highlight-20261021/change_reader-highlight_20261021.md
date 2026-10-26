@@ -1,5 +1,23 @@
 # Changes: phase-reader-highlight-20261021
 
+## 2026-10-24 · task014
+
+- 决定：`adr_reader-iframe-overlay_20261024.md`。Reader 从“原地重建网页 + 刷新退出”改为扩展 iframe 覆盖层。
+- Add `src/reader/extract.ts`：`ReaderArticle`（新增 `keywords`）；`cloneDocumentWithShadow`（克隆文档并把 open shadow root 的内容复制进克隆，替代原来直接改网页的 `flattenShadowDom`）；`absolutizeUrls`（`src`/`href`/`poster`/`data-src`/`srcset` 按网页 URL 补全，`#…` 不动）；`stripDuplicateTitle` 从 `reader.ts` 移来，改为纯函数。
+- Add `src/reader/reader-host.ts`（注入网页顶层 frame）：`toggleReaderMode` 开关；在克隆上跑 Defuddle；建 `<caom-reader-overlay>`（内联 `!important` 样式、`popover="manual"` 进 top layer、closed shadow root、`adoptedStyleSheets`）；锁网页滚动并在退出时还原；回应 `getReaderArticle`；只接受 `event.source === iframe.contentWindow` 的 `caom-reader-ready` / `caom-reader-close`；进入淡入上移 16px、退出反向，220ms，`prefers-reduced-motion` 不动画；5 秒未就绪则移除并通知；退出 400ms 兜底。
+- Add `src/reader/reader.html`；`webpack.config.js` 新增 `reader-host` 入口和 `reader.html`（chunk `reader`）。
+- Modify `src/reader/reader.ts`：删除 `cleanupPage`、`flattenShadowDom`、`applyReader`、`toggleReader` 和消息监听；新增 `init`（向 background 要文章后建 UI，完成后通知宿主）、`requestClose`（替换两处 `location.reload()`）、`installLinkHandling`（文章链接在新标签页打开，`#…` 在 Reader 内滚动）；转换器直接引入 `TurndownService`，删除 `html2org not loaded` 分支；Save 的作者和关键词取自 `article`；高亮颜色改为页面内 `<style>`。
+- Modify `src/reader/reader.css`：`overscroll-behavior: none`。
+- Modify `src/common.ts`、`src/background.ts`：删除 `insertReaderCss`；新增 `getReaderArticle`，background 用 `chrome.tabs.sendMessage(..., { frameId: 0 })` 转给宿主脚本；`toggleReaderMode` 不再 `insertCSS(reader.css)`，注入 `reader-host.js` 代替 `reader.js`。
+- Modify `manifest.json`：`web_accessible_resources` 用 `dist/reader.html` 替换 `dist/reader.css`。
+- Modify `src/background.ts`：右键菜单 `documentUrlPatterns` 由 `<all_urls>` 改为 `PAGE_URL_PATTERNS`（`http://*/*`、`https://*/*`、`file:///*`），Reader 里右键不出现 Copy / Save，避免保存下面网页、丢失高亮。
+- Modify `src/reader/reader.ts`：`copyInFrame` 在 Reader 页面里用 `execCommand('copy')` 复制，失败时退回 background 复制；iframe 加 `allow="clipboard-write"`。
+- 宿主：`overlay` 在挂载前赋值，`showPopover()` 包 try/catch，失败时也能 teardown；宽高改为 `auto` 靠 `inset: 0`（`100vw` 在有滚动条的系统上会多出滚动条宽度）；URL 补全用 `document.baseURI`（尊重网页的 `<base href>`）。
+- Add `test/reader-extract.test.ts`：3 个用例（克隆含嵌套 shadow 内容且网页不变；URL 补全；重复标题去除）。
+- 验证：`npm test` 72 pass；`npm run build` 通过。未在浏览器中验证。
+- 行为变化 / 风险：Defuddle 留下的相对 URL 现在在 Copy / Save 输出里是绝对 URL。退出不刷新，网页状态保留；高亮仍在退出时丢失。图片在扩展页面里加载，不带网页 Referer，有防盗链的网站可能不显示（Save (with images) 仍在网页里取图，不受影响）。`http://` 图片在扩展页面里可能被升级或拦截。Reader 里右键不再有 Copy / Save 菜单。网页 CSP `frame-src` 是否拦扩展 iframe 未实测。
+- 手动验证步骤：重新加载扩展，刷新网页后：① 普通文章进入、退出，动画平滑，退出后滚动位置不变、网页不刷新；② 知乎、Google AI Mode、github.com 进入正常；③ Esc、✕ 按钮、再按快捷键都能退出；④ 划线、批注、编辑、删除、Copy、Save、Save (with images) 正常；⑤ 文章内链接在新标签页打开，脚注 `#` 链接在 Reader 内跳转；⑥ 系统开启“减少动态效果”后进出无动画；⑦ 在 Reader 里右键，不应出现 Copy / Save 菜单；⑧ 微信公众号文章（图片在 `mmbiz.qpic.cn`）图片能否显示。
+
 ## 2026-10-24 · task008
 
 - Add `src/reader/highlight.ts`：`highlightPieces(root, id)`；`updateHighlight(root, id, { type, note })`（所有片段改属性，空批注删属性，旧气泡删掉、在最后一段重建）；`removeHighlight(root, id)`（删气泡，展开所有片段，父节点 `normalize()`）。

@@ -11,14 +11,9 @@ import { msgManager, SavedPage } from '../common'
 import { decorateArticle, articleHtmlForExport } from './article-dom'
 import { addNoteBubble, checkHighlightRange, highlightPieces, removeHighlight, tightenRange, updateHighlight, wrapRange } from './highlight'
 import { isValidChaiTypeName } from '../chai-types'
+import { ReaderArticle } from './extract'
+import TurndownService from '../html2org/turndown'
 
-declare global {
-  interface Window {
-    __caomReaderLoaded?: boolean
-  }
-}
-
-let readerActive = false
 let article: ReaderArticle | null = null
 let opts: CopyAsOrgModeOptions | null = null
 
@@ -37,71 +32,18 @@ const ICON_SUN = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" st
 const ICON_TYPE = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></svg>'
 const ICON_CHEVRONS = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m7 15 5 5 5-5"/><path d="m7 9 5-5 5 5"/></svg>'
 
-interface ReaderArticle {
-  title: string
-  author: string
-  published: string
-  domain: string
-  url: string
-  contentHTML: string
-  wordCount: number
-}
+// The host page (reader-host.ts) extracts the article; this page shows it.
+init().catch(err => {
+  console.error('[copy-as-org-mode reader]', err)
+  requestClose()
+})
 
-// Idempotency guard + message listener
-if (!window.__caomReaderLoaded) {
-  window.__caomReaderLoaded = true
-  chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
-    if (msg && msg.type === 'toggleReaderMode') {
-      toggleReader()
-      sendResponse({ ok: true })
-    }
-    return false
-  })
-}
-
-function toggleReader(): void {
-  if (readerActive) {
-    window.location.reload()
-    return
-  }
-  applyReader().catch(err => console.error('[copy-as-org-mode reader]', err))
-}
-
-async function applyReader(): Promise<void> {
+async function init(): Promise<void> {
   opts = await storageManager.getData()
-  flattenShadowDom(document.body)
-
-  // Clone + extract
-  const docClone = document.cloneNode(true) as Document
-  const defuddle = new window.Defuddle(docClone, {
-    url: location.href,
-    ...(opts.defuddleLanguage ? { language: opts.defuddleLanguage } : {}),
-  })
-  const result = await defuddle.parseAsync()
-
-  // Fallback if extraction failed
-  let contentHTML = result?.content
-  if (!contentHTML) {
-    const fallbackEl = document.querySelector('article') || document.body
-    contentHTML = fallbackEl.innerHTML
-  }
-
-  // Build article object
-  article = {
-    title: result?.title || document.title,
-    author: result?.author || '',
-    published: result?.published || '',
-    domain: result?.domain || location.hostname,
-    url: location.href,
-    contentHTML: contentHTML,
-    wordCount: result?.wordCount ?? 0,
-  }
-
-  // Strip leading duplicate title
-  stripDuplicateTitle()
-
-  // Cleanup page
-  cleanupPage()
+  const res = await msgManager.sendToBg({ type: 'getReaderArticle' }) as { article: ReaderArticle | null } | undefined
+  article = res?.article ?? null
+  if (!article) throw new Error('No article from the host page')
+  document.title = article.title
 
   // Apply theme and CSS variables
   document.documentElement.classList.add('caom-reader-active')
@@ -122,156 +64,38 @@ async function applyReader(): Promise<void> {
   const articleEl = document.querySelector('.caom-reader-article') as HTMLElement
   if (articleEl) {
     buildOutline(articleEl)
+    installLinkHandling(articleEl)
   }
   buildToolbar()
   if (articleEl) {
     installHighlighting(articleEl)
   }
 
-  readerActive = true
+  window.parent.postMessage({ type: 'caom-reader-ready' }, '*')
 }
 
-function flattenShadowDom(el: Element): void {
-  try {
-    const children = Array.from(el.children)
-    for (const child of children) {
-      if (child.shadowRoot) {
-        const shadowClone = Array.from(child.shadowRoot.childNodes).map(n =>
-          (n.cloneNode ? n.cloneNode(true) : n)
-        )
-        for (const clonedNode of shadowClone) {
-          child.appendChild(clonedNode)
-        }
-      }
-      flattenShadowDom(child)
-    }
-  } catch (e) {
-    console.warn('[caom-reader] flattenShadowDom error:', e)
-  }
+/** Ask the host page to remove the overlay; the page is not reloaded. */
+function requestClose(): void {
+  window.parent.postMessage({ type: 'caom-reader-close' }, '*')
 }
 
-function stripDuplicateTitle(): void {
-  if (!article) return
-  try {
-    const parsed = new DOMParser().parseFromString(article.contentHTML, 'text/html')
-    const titleText = article.title.trim().toLowerCase()
-    const firstChild = parsed.body.firstElementChild
-    if (firstChild && /^H[1-6]$/.test(firstChild.tagName)) {
-      const elText = firstChild.textContent?.trim().toLowerCase() || ''
-      if (elText === titleText) {
-        firstChild.remove()
-        article.contentHTML = parsed.body.innerHTML
-      }
+// This page is an extension page inside the overlay: links open in a new tab,
+// and fragment links scroll the Reader.
+function installLinkHandling(articleEl: HTMLElement): void {
+  articleEl.addEventListener('click', (e: MouseEvent) => {
+    if (e.defaultPrevented || e.button !== 0) return
+    const a = (e.target as Element).closest('a[href]') as HTMLAnchorElement | null
+    if (!a) return
+    e.preventDefault()
+    const href = a.getAttribute('href')!
+    if (href.startsWith('#')) {
+      const id = decodeURIComponent(href.slice(1))
+      const target = document.getElementById(id) || document.getElementsByName(id)[0]
+      target?.scrollIntoView({ behavior: 'smooth' })
+      return
     }
-  } catch (e) {
-    console.warn('[caom-reader] stripDuplicateTitle error:', e)
-  }
-}
-
-function cleanupPage(): void {
-  // Brute-force clear timers
-  try {
-    let id = window.setTimeout(() => {}, 0) as unknown as number
-    while (id--) {
-      window.clearTimeout(id)
-      window.clearInterval(id)
-    }
-  } catch (e) {}
-
-  // Remove script elements except application/ld+json
-  try {
-    const scripts = Array.from(document.querySelectorAll('script:not([type="application/ld+json"])')).map(el => el)
-    scripts.forEach(s => s.remove())
-  } catch (e) {
-    console.warn('[caom-reader] script removal error:', e)
-  }
-
-  // Replace body to drop event listeners
-  try {
-    const bodyClone = document.body.cloneNode(true)
-    document.body.replaceWith(bodyClone)
-  } catch (e) {
-    console.warn('[caom-reader] body clone error:', e)
-  }
-
-  // Add CSP meta tag
-  try {
-    const cspMeta = document.createElement('meta')
-    cspMeta.httpEquiv = 'Content-Security-Policy'
-    cspMeta.content = "script-src 'none'; object-src 'none';"
-    document.head.insertBefore(cspMeta, document.head.firstChild)
-  } catch (e) {
-    console.warn('[caom-reader] CSP meta error:', e)
-  }
-
-  // Remove stylesheets and styles except caom-reader-styles
-  try {
-    const links = Array.from(document.querySelectorAll('link[rel~="stylesheet"], link[as="style"]')).filter(
-      l => l.id !== 'caom-reader-styles'
-    )
-    links.forEach(l => l.remove())
-    const styles = Array.from(document.querySelectorAll('style')).filter(s => s.id !== 'caom-reader-styles')
-    styles.forEach(s => s.remove())
-  } catch (e) {
-    console.warn('[caom-reader] stylesheet removal error:', e)
-  }
-
-  // Strip html and body attributes
-  try {
-    const htmlAttrs = Array.from(document.documentElement.attributes).map(a => a.name)
-    for (const attr of htmlAttrs) {
-      if (attr !== 'lang' && attr !== 'dir') {
-        document.documentElement.removeAttribute(attr)
-      }
-    }
-    const bodyAttrs = Array.from(document.body.attributes).map(a => a.name)
-    for (const attr of bodyAttrs) {
-      document.body.removeAttribute(attr)
-    }
-  } catch (e) {
-    console.warn('[caom-reader] attribute stripping error:', e)
-  }
-
-  // Remove base elements
-  try {
-    Array.from(document.querySelectorAll('base')).forEach(b => b.remove())
-  } catch (e) {
-    console.warn('[caom-reader] base removal error:', e)
-  }
-
-  // Ensure charset and viewport
-  try {
-    let charsetFound = false
-    let viewportFound = false
-    for (const meta of Array.from(document.querySelectorAll('meta'))) {
-      if (meta.getAttribute('charset')) charsetFound = true
-      if (meta.getAttribute('name') === 'viewport') viewportFound = true
-    }
-    if (!charsetFound) {
-      const charset = document.createElement('meta')
-      charset.setAttribute('charset', 'UTF-8')
-      document.head.insertBefore(charset, document.head.firstChild)
-    }
-    if (!viewportFound) {
-      const viewport = document.createElement('meta')
-      viewport.setAttribute('name', 'viewport')
-      viewport.setAttribute('content', 'width=device-width, initial-scale=1')
-      document.head.appendChild(viewport)
-    }
-  } catch (e) {
-    console.warn('[caom-reader] meta tag error:', e)
-  }
-
-  // Add reader CSS link
-  try {
-    const styleLink = document.createElement('link')
-    styleLink.id = 'caom-reader-styles'
-    styleLink.rel = 'stylesheet'
-    styleLink.href = chrome.runtime.getURL('dist/reader.css')
-    document.head.appendChild(styleLink)
-  } catch (e) {
-    console.warn('[caom-reader] reader CSS link error:', e)
-  }
+    window.open(a.href, '_blank', 'noopener')
+  })
 }
 
 function buildReaderUI(): void {
@@ -531,7 +355,7 @@ function buildToolbar(): void {
   exitButton.textContent = '✕'
   exitButton.title = 'Exit Reader View'
   exitButton.addEventListener('click', () => {
-    window.location.reload()
+    requestClose()
   })
   toolbar.appendChild(exitButton)
 
@@ -623,7 +447,7 @@ function buildToolbar(): void {
         panel.classList.add('caom-hidden')
       } else {
         // Exit reader
-        window.location.reload()
+        requestClose()
       }
     }
   })
@@ -762,20 +586,11 @@ function convertArticle(saveImages: boolean): { org: string, extractedImages: Sa
   }
   const articleEl = document.querySelector('.caom-reader-article') as HTMLElement | null
   const contentHTML = articleEl ? articleHtmlForExport(articleEl) : article.contentHTML
-  return { org: window.html2org.convert(contentHTML, conversionOptions), extractedImages }
+  return { org: new TurndownService(conversionOptions).turndown(contentHTML), extractedImages }
 }
 
 function copyAsOrg(): void {
   if (!article || !opts) return
-
-  if (!window.html2org) {
-    msgManager.sendToBg({
-      type: 'showBgNotification',
-      title: 'Error',
-      message: 'html2org not loaded',
-    })
-    return
-  }
 
   try {
     const orgBody = convertArticle(false).org
@@ -793,10 +608,12 @@ function copyAsOrg(): void {
     }
     header += `#+SOURCE_URL: ${article.url}\n\n`
 
-    msgManager.sendToBg({
-      type: 'copyStringToClipboard',
-      org: header + orgBody,
-    })
+    const org = header + orgBody
+    if (copyInFrame(org)) {
+      msgManager.sendToBg({ type: 'showBgNotification', title: 'Org-Mode Text Copied Successfully!', message: org })
+    } else {
+      msgManager.sendToBg({ type: 'copyStringToClipboard', org })
+    }
   } catch (err) {
     console.error('[caom-reader] copyAsOrg error:', err)
     msgManager.sendToBg({
@@ -807,30 +624,37 @@ function copyAsOrg(): void {
   }
 }
 
+// Copy here: the background copies in the page, which would take the focus
+// away from the Reader frame.
+function copyInFrame(text: string): boolean {
+  const textarea = document.createElement('textarea')
+  textarea.style.position = 'fixed'
+  textarea.style.left = '-9999px'
+  textarea.value = text
+  document.body.appendChild(textarea)
+  textarea.select()
+  try {
+    return document.execCommand('copy')
+  } catch (e) {
+    return false
+  } finally {
+    textarea.remove()
+  }
+}
+
 // Hand the converted article to the background, which would otherwise
 // re-extract the page and lose the highlights.
 function saveAsOrg(withImages: boolean): void {
   if (!article || !opts) return
 
-  if (!window.html2org) {
-    msgManager.sendToBg({
-      type: 'showBgNotification',
-      title: 'Error',
-      message: 'html2org not loaded',
-    })
-    return
-  }
-
   try {
     const { org, extractedImages } = convertArticle(withImages)
-    const metaContent = (name: string) =>
-      document.querySelector(`meta[name="${name}"]`)?.getAttribute('content') || ''
     const page: SavedPage = {
       title: article.title,
       content: org,
       url: article.url,
-      author: article.author || metaContent('author'),
-      keywords: metaContent('keywords'),
+      author: article.author,
+      keywords: article.keywords,
       extractedImages,
     }
     if (withImages) {
@@ -895,7 +719,11 @@ function applyHighlightColors(): void {
   const css = opts.chaiTypes
     .map(t => `html.caom-reader-active .caom-reader-article mark[data-chai-type][data-chai-type="${t.name}"] { background: ${t.color}; }`)
     .join('\n')
-  msgManager.sendToBg({ type: 'insertReaderCss', css })
+  // An extension page: no page CSP to block an inline style here
+  const style = document.createElement('style')
+  style.id = 'caom-hl-colors'
+  style.textContent = css
+  document.head.appendChild(style)
 }
 
 function buildHighlightMenu(): HTMLElement {

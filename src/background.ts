@@ -48,6 +48,10 @@ storageManager.onDataChanged(async (changes) => {
   objectAssignPerfectly(STORAGE, await storageManager.getData())
 })
 
+// Web pages only. The Reader View is an extension page inside the tab; menu
+// actions there would act on the page underneath and miss the highlights.
+const PAGE_URL_PATTERNS = ["http://*/*", "https://*/*", "file:///*"];
+
 // 创建右键菜单
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.removeAll(() => {
@@ -56,7 +60,7 @@ chrome.runtime.onInstalled.addListener(() => {
         id: "save-page-as-org",
         title: "Save Page as Org-Mode",
         contexts: ["page", "frame"],
-        documentUrlPatterns: ["<all_urls>"],
+        documentUrlPatterns: PAGE_URL_PATTERNS,
       }
     );
 
@@ -65,7 +69,7 @@ chrome.runtime.onInstalled.addListener(() => {
         id: "save-page-as-org-folder",
         title: "Save Page as Org-Mode (With Images)",
         contexts: ["page", "frame"],
-        documentUrlPatterns: ["<all_urls>"],
+        documentUrlPatterns: PAGE_URL_PATTERNS,
       }
     );
 
@@ -73,21 +77,21 @@ chrome.runtime.onInstalled.addListener(() => {
       id: "copy-link-as-org-mode",
       title: "Copy Link as Org-Mode",
       contexts: ["link"],
-      documentUrlPatterns: ["<all_urls>"],
+      documentUrlPatterns: PAGE_URL_PATTERNS,
     });
 
     chrome.contextMenus.create({
       id: "copy-selection-as-org-mode",
       title: "Copy Selection as Org-Mode",
       contexts: ["selection"],
-      documentUrlPatterns: ["<all_urls>"],
+      documentUrlPatterns: PAGE_URL_PATTERNS,
     });
 
     chrome.contextMenus.create({
       id: "copy-current-page-url-as-org-mode",
       title: "Copy Page as Org-Mode Link",
       contexts: ["page"],
-      documentUrlPatterns: ["<all_urls>"],
+      documentUrlPatterns: PAGE_URL_PATTERNS,
     });
 
     chrome.contextMenus.create({
@@ -300,12 +304,15 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
       if (sender.tab?.id !== undefined) { savePageAsOrgFolder(sender.tab.id, message.page) }
       break;
     }
-    case 'insertReaderCss': {
-      if (sender.tab?.id !== undefined) {
-        chrome.scripting.insertCSS({ target: { tabId: sender.tab.id }, css: message.css })
-          .catch(err => console.error('[insertReaderCss]', err));
-      }
-      break;
+    case 'getReaderArticle': {
+      if (sender.tab?.id === undefined) { break }
+      // Only the extension can reach the host script, so the page cannot answer for it
+      chrome.tabs.sendMessage(sender.tab.id, message, { frameId: 0 })
+        .then(sendResponse, (err) => {
+          console.error('[getReaderArticle]', err);
+          sendResponse({ article: null });
+        });
+      return true;
     }
   }
 });
@@ -838,13 +845,10 @@ async function savePageAsOrgFolder(tabId: number, page?: SavedPage) {
 async function toggleReaderMode(tab: chrome.tabs.Tab | undefined): Promise<void> {
   if (!tab || tab.id === undefined) { return }
   if (!await canExecuteScript(tab.id)) { return }
-  await chrome.scripting.insertCSS({
-    target: { tabId: tab.id },
-    files: ['dist/reader.css'],
-  })
+  // The Reader itself is an extension page the host script shows in an overlay
   await chrome.scripting.executeScript({
     target: { tabId: tab.id },
-    files: ['dist/defuddle.js', 'dist/content-script.js', 'dist/reader.js'],
+    files: ['dist/defuddle.js', 'dist/content-script.js', 'dist/reader-host.js'],
   })
   await msgManager.sendToTab(tab.id, { type: 'toggleReaderMode' })
 }

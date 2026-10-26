@@ -43,6 +43,10 @@ const config = {
         'reader': {
             import: './src/reader/reader.ts',
             filename: 'reader.js'
+        },
+        'reader-host': {
+            import: './src/reader/reader-host.ts',
+            filename: 'reader-host.js'
         }
     },
     output: {
@@ -109,6 +113,12 @@ const config = {
             filename: 'save_folder.html',
             chunks: ['save_folder'],
             inject: true
+        }),
+        new HtmlWebpackPlugin({
+            template: './src/reader/reader.html',
+            filename: 'reader.html',
+            chunks: ['reader'],
+            inject: 'body'
         }),
         //new HtmlWebpackPugPlugin({
         //

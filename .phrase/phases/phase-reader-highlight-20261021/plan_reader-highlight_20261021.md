@@ -10,6 +10,7 @@
 3. **M3 type 配置**：Options 页 chai type 表。（task006）
 4. **M4 交互**：选区浮动菜单、编辑已有高亮、退出确认。（task007–task009）
 5. **M5 发布**：README、版本号、全量回归。（task010）
+6. **M6 Reader 覆盖层**：Reader 改为扩展 iframe 覆盖层，原网页不改动，退出不刷新，进出有动画。（task014，见 `adr_reader-iframe-overlay_20261024.md`）
 
 先做 M1/M2：导出是本期风险最大的部分，交互可以在管线验证后再接上。
 
@@ -25,6 +26,8 @@ P1：编辑已有高亮、退出确认。
 P2：README 截图。
 
 ## Risks & Dependencies
+
+- task014：网页的 CSP `frame-src` 是否会拦扩展 iframe 未实测（Chromium 对扩展 scheme 有 CSP 豁免，按此设计）；加载失败时 5 秒超时提示。需在 github.com 等严格 CSP 的网站上手动验证。
 
 - Save 路径目前在 background 中重新注入脚本、重新提取；改为 reader 提供内容后，with images 的图片下载流程依赖 HTML 中的图片 URL，需回归。
 - `<mark>` 包裹跨元素选区可能破坏 Defuddle 输出的嵌套结构；用 `Range` 按文本节点切分包裹，不跨块级元素包裹。
