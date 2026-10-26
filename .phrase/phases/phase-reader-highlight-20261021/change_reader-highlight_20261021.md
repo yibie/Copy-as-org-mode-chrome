@@ -4,14 +4,15 @@
 
 - Modify `README.org`：新增 “Reader View with Highlights” 一节（进出、划线与批注、chai 导出格式与转义、type 表、限制）；站点提取表加 Google AI Mode、知乎专栏；安装包名改为 v1.6.0；Changelog 补 1.5.0、1.6.0。
 - Modify `package.json`、`manifest.json`：版本 1.5.0 → 1.6.0；重新构建 `dist/`。
-- 验证：`npm run build` 通过，`dist/manifest.json` 版本 1.6.0；`npm test` 72 pass。Acceptance Criteria 的浏览器回归由用户在 task007、task008、task014 中完成；task009 待用户确认。
+- 验证：`npm run build` 通过，`dist/manifest.json` 版本 1.6.0；`npm test` 72 pass。Acceptance Criteria 的浏览器回归由用户在 task007、task008、task009、task014 中完成。
+- 发布：2026-10-26 GitHub Release `v1.6.0`，附 `copy-as-org-mode-v1.6.0.zip`。
 
 ## 2026-10-26 · task009
 
 - Modify `src/reader/reader.ts`：`unexported`（新建、改、删高亮时置真；Copy、Save 后清零）；`exitReader`（有未导出改动时弹确认，否则关闭）替换 ✕ 按钮和 Esc 的 `requestClose`；`showExitConfirm` / `hideExitConfirm`（Reader 内自绘确认框，不用 `window.confirm`：跨来源 iframe 里的原生对话框可能被 Chrome 拦截）；捕获阶段的 Esc 先关闭确认框；监听宿主发来的 `caom-reader-exit`（只接受 `event.source === window.parent`）。
 - Modify `src/reader/reader-host.ts`：`Overlay.ready`；Reader 就绪后，快捷键或右键菜单退出改为把焦点交给 iframe 并发 `caom-reader-exit`，由 Reader 决定是否确认；就绪前仍直接关闭。
 - Modify `src/reader/reader.css`：`.caom-exit-confirm*`。
-- 验证：`npm run build` 通过，`npm test` 72 pass（无新增单元测试，逻辑在 UI 胶水层）。未在浏览器中验证。手动步骤：① 不划线直接 Esc，直接退出；② 划线后 ✕ / Esc / 快捷键，都弹确认；Keep reading 和 Esc 留下，Discard and exit 退出；③ 划线后 Copy 或 Save，再退出不弹；④ Copy 后再改批注或删除高亮，退出又弹。
+- 验证：`npm run build` 通过，`npm test` 72 pass（无新增单元测试，逻辑在 UI 胶水层）。2026-10-26 用户在浏览器中手动验证通过。手动步骤：① 不划线直接 Esc，直接退出；② 划线后 ✕ / Esc / 快捷键，都弹确认；Keep reading 和 Esc 留下，Discard and exit 退出；③ 划线后 Copy 或 Save，再退出不弹；④ Copy 后再改批注或删除高亮，退出又弹。
 - 风险：网页脚本可以向 Reader 发 `caom-reader-exit`（来源是同一个 window），最多触发一次退出确认或在无改动时关闭 Reader，不涉及数据。
 
 ## 2026-10-24 · task014
