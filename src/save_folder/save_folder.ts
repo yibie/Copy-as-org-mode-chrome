@@ -14,6 +14,66 @@ interface ISaveData {
     images: IImageInfo[];
 }
 
+// Remember the last chosen folder. FileSystemDirectoryHandle survives structured
+// clone, so it can live in IndexedDB (chrome.storage cannot hold it).
+const DB_NAME = 'caom-save-folder';
+const DB_STORE = 'handles';
+const LAST_DIR_KEY = 'lastDir';
+
+function openDb(): Promise<IDBDatabase> {
+    return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, 1);
+        req.onupgradeneeded = () => req.result.createObjectStore(DB_STORE);
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+    });
+}
+
+async function loadLastDir(): Promise<any> {
+    try {
+        const db = await openDb();
+        return await new Promise((resolve, reject) => {
+            const req = db.transaction(DB_STORE).objectStore(DB_STORE).get(LAST_DIR_KEY);
+            req.onsuccess = () => resolve(req.result);
+            req.onerror = () => reject(req.error);
+        });
+    } catch (e) {
+        console.warn('Failed to load last folder', e);
+        return undefined;
+    }
+}
+
+async function saveLastDir(handle: any): Promise<void> {
+    try {
+        const db = await openDb();
+        await new Promise<void>((resolve, reject) => {
+            const tx = db.transaction(DB_STORE, 'readwrite');
+            tx.objectStore(DB_STORE).put(handle, LAST_DIR_KEY);
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    } catch (e) {
+        console.warn('Failed to remember folder', e);
+    }
+}
+
+async function pickDirectory(): Promise<any> {
+    const lastDir = await loadLastDir();
+    const options = { id: 'caom-save', mode: 'readwrite' };
+    if (lastDir) {
+        try {
+            // @ts-ignore
+            return await window.showDirectoryPicker({ ...options, startIn: lastDir });
+        } catch (err: any) {
+            if (err.name === 'AbortError') throw err;
+            // Stale handle (folder moved or deleted): retry without it.
+            console.warn('Last folder unusable, picking without it', err);
+        }
+    }
+    // @ts-ignore
+    return await window.showDirectoryPicker(options);
+}
+
 const statusEl = document.getElementById('status') as HTMLElement;
 const btn = document.getElementById('selectFolderBtn') as HTMLButtonElement;
 
@@ -60,8 +120,7 @@ async function main() {
                 if (typeof window.showDirectoryPicker !== 'function') {
                     throw new Error("API_MISSING");
                 }
-                // @ts-ignore
-                dirHandle = await window.showDirectoryPicker();
+                dirHandle = await pickDirectory();
             } catch (err: any) {
                 // If user cancelled, re-throw
                 if (err.name === 'AbortError') throw err;
@@ -74,6 +133,7 @@ async function main() {
 
             if (!fileSystemAccessFailed && dirHandle) {
                 showStatus('Writing files...', 'normal');
+                await saveLastDir(dirHandle);
                 const fileHandle = await dirHandle.getFileHandle(filename, { create: true });
                 const writable = await fileHandle.createWritable();
                 await writable.write(data.content);
