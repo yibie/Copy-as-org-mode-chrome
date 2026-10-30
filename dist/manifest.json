@@ -43,6 +43,7 @@
         "clipboardWrite",
         "contextMenus",
         "storage",
+        "unlimitedStorage",
         "notifications",
         "scripting",
         "downloads"

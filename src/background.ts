@@ -617,6 +617,20 @@ async function savePageAsOrg(tabId: number, page?: SavedPage) {
   }
 }
 
+// The save page removes its entry only after a successful save. Entries left by
+// tabs closed without saving pile up and eat the storage quota.
+const SAVE_DATA_MAX_AGE_MS = 60 * 60 * 1000;
+
+async function purgeStaleSaveData() {
+  const all = await chrome.storage.local.get(null);
+  const now = Date.now();
+  const stale = Object.keys(all).filter(key => {
+    const m = /^save_folder_(\d+)$/.exec(key);
+    return m && now - Number(m[1]) > SAVE_DATA_MAX_AGE_MS;
+  });
+  if (stale.length > 0) await chrome.storage.local.remove(stale);
+}
+
 async function savePageAsOrgFolder(tabId: number, page?: SavedPage) {
   try {
     // 1. Inject content script
@@ -826,6 +840,7 @@ async function savePageAsOrgFolder(tabId: number, page?: SavedPage) {
     };
 
     try {
+        await purgeStaleSaveData();
         await chrome.storage.local.set({ [dataId]: storageData });
         // 6. Open Helper Page
         chrome.tabs.create({ url: `dist/save_folder.html?id=${dataId}` });

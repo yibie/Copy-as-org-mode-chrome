@@ -1,5 +1,7 @@
 # CHANGE Index
 
+- 2026-10-29 · DONE-phase-reader-highlight-20261021 · task016 Save (with images) 存储配额超限（issue004） → `../phases/DONE-phase-reader-highlight-20261021/DONE-CHANGE-reader-highlight_20261021.md`
+- 2026-10-29 · DONE-phase-reader-highlight-20261021 · task015 Save (with images) 记住上次的文件夹（issue003） → `../phases/DONE-phase-reader-highlight-20261021/DONE-CHANGE-reader-highlight_20261021.md`
 - 2026-10-26 · DONE-phase-reader-highlight-20261021 · task010 README 与版本号 1.6.0 → `../phases/DONE-phase-reader-highlight-20261021/DONE-CHANGE-reader-highlight_20261021.md`
 - 2026-10-26 · DONE-phase-reader-highlight-20261021 · task009 退出 Reader 前确认未导出的高亮 → `../phases/DONE-phase-reader-highlight-20261021/DONE-CHANGE-reader-highlight_20261021.md`
 - 2026-10-24 · DONE-phase-reader-highlight-20261021 · task014 Reader 改为扩展 iframe 覆盖层，退出不刷新，进出有动画 → `../phases/DONE-phase-reader-highlight-20261021/DONE-CHANGE-reader-highlight_20261021.md`
