@@ -5,6 +5,7 @@
 - Modify `manifest.json`：`permissions` 加 `unlimitedStorage`，`chrome.storage.local` 不再受 10 MB 上限限制。
 - Modify `src/background.ts`：新增 `purgeStaleSaveData`（删除键名时间戳超过 1 小时的 `save_folder_*`），`savePageAsOrgFolder` 写入前调用。
 - 验证：`npm run build` 通过，`dist/manifest.json` 含 `unlimitedStorage`；`npm test` 72 pass。待用户手动确认：重新加载扩展，对报错的网页再次 Save (with images)。
+- 发布：2026-10-30 GitHub Release `v1.6.1`（含 task015、task016），附 `copy-as-org-mode-v1.6.1.zip`。
 - 风险：已安装用户更新后多一项权限（`unlimitedStorage` 在 Chrome 中无安装警告）。超过 1 小时仍未点保存的保存页会显示 `Data not found or expired.`。
 
 ## 2026-10-29 · task015
