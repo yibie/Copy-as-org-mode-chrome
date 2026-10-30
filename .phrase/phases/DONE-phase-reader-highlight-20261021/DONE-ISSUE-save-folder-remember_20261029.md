@@ -1,4 +1,4 @@
-# issue003 [ ] Save (with images) 不记住上次保存的文件夹
+# issue003 [x] Save (with images) 不记住上次保存的文件夹
 
 ## Summary
 保存带图片的网页时，每次都要从头选文件夹；不带图片的 Save 能记住上次的位置。
@@ -27,10 +27,10 @@ copy-as-org-mode 1.6.0，Chrome，保存到文件夹（File System Access API）
 
 ## Verification
 - `npm run build` 通过，`npm test` 72 pass。
-- 待用户在浏览器中确认：连续两次 Save (with images)，第二次选择器打开在上次的文件夹。
+- 2026-10-30 用户在浏览器中确认：现在能记住保存的路径。
 
 ## User Confirmation
-待确认。
+已确认（2026-10-30）。
 
 ## Resolved At/By/Commit
-—
+2026-10-30 / yibie / 34cf9c3

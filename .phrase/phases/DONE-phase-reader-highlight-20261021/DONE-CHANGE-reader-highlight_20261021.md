@@ -10,7 +10,7 @@
 ## 2026-10-29 · task015
 
 - Modify `src/save_folder/save_folder.ts`：新增 `openDb` / `loadLastDir` / `saveLastDir`（把选中的 `FileSystemDirectoryHandle` 存进 IndexedDB `caom-save-folder`，`chrome.storage` 存不了 handle）；新增 `pickDirectory`（`showDirectoryPicker({ id: 'caom-save', mode: 'readwrite', startIn: 上次的文件夹 })`，上次的文件夹不可用时去掉 `startIn` 重试，不退到 ZIP）；写文件前调用 `saveLastDir`。
-- 验证：`npm run build` 通过，`npm test` 72 pass。系统文件夹对话框无法自动操作，待用户手动确认：重新加载扩展，保存带图片的网页选文件夹 A，再保存一次，选择器应打开在 A。
+- 验证：`npm run build` 通过，`npm test` 72 pass。系统文件夹对话框无法自动操作，2026-10-30 用户在浏览器中手动确认通过。
 - 行为变化 / 风险：`mode: 'readwrite'` 在选择时一并请求写权限，可能少弹一次授权提示。ZIP 兜底（浏览器不支持 File System Access API）仍存到默认下载目录，不记路径。
 
 ## 2026-10-26 · task010

@@ -198,7 +198,7 @@ both the Org file and the images folder.
 
 ** Installation
 
-1. Download =copy-as-org-mode-v1.6.0.zip= from the [[https://github.com/yibie/Copy-as-org-mode-chrome/releases][Releases page]].
+1. Download =copy-as-org-mode-v1.6.1.zip= from the [[https://github.com/yibie/Copy-as-org-mode-chrome/releases][Releases page]].
 2. Unzip it.
 3. Open Chrome → go to =chrome://extensions=.
 4. Enable *Developer mode* (toggle in the top‑right).
@@ -217,6 +217,7 @@ Then load the =dist/= directory as an unpacked extension.
 
 | Version | Date | Changes |
 |---------+------+---------|
+| 1.6.1 | 2026-10-30 | Save with images remembers the last folder; pages with many images no longer fail with a storage quota error |
 | 1.6.0 | 2026-10-26 | Reader View highlights with chai export (inline links and =#+BEGIN_CHAI= blocks), notes, editable type table in Options, exit confirm; Reader opens as an overlay with enter/exit animation and no reload; Zhihu and Google AI Mode extractors; file names no longer fail on invisible characters |
 | 1.5.0 | 2026-07-11 | Reader View: outline, reading settings, Org copy/save from the toolbar |
 | 1.4.0 | 2026-06-23 | Defuddle upgrade 0.6 → 0.19, 26 site extractors (YouTube transcript, Twitter, Reddit, GitHub, HN, ChatGPT, Claude, etc.), language setting for extraction, async API‑fetch pipeline |
