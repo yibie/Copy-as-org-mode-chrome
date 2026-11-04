@@ -1,0 +1,69 @@
+:root {
+  --fg: #15141a;
+  --fg-muted: #5b5b66;
+  --bg: #ffffff;
+  --hover: #e8e8ed;
+  --rule: #d7d7db;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fg: #fbfbfe;
+    --fg-muted: #b0b0b8;
+    --bg: #2b2a33;
+    --hover: #3d3c45;
+    --rule: #52525e;
+  }
+}
+
+body {
+  margin: 0;
+  padding: 4px 0;
+  min-width: 260px;
+  font: 13px/1.4 system-ui, sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+}
+
+.menu {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.menu button {
+  display: block;
+  width: 100%;
+  padding: 6px 14px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.menu button:hover:not(:disabled),
+.menu button:focus-visible {
+  background: var(--hover);
+  outline: none;
+}
+
+.menu button:disabled {
+  color: var(--fg-muted);
+  cursor: default;
+}
+
+.hint {
+  margin: 4px 14px;
+  color: var(--fg-muted);
+  font-size: 12px;
+}
+
+hr {
+  margin: 4px 0;
+  border: 0;
+  border-top: 1px solid var(--rule);
+}

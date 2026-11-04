@@ -47,6 +47,10 @@ const config = {
         'reader-host': {
             import: './src/reader/reader-host.ts',
             filename: 'reader-host.js'
+        },
+        'popup': {
+            import: './src/popup/popup.ts',
+            filename: 'popup.js'
         }
     },
     output: {
@@ -120,6 +124,12 @@ const config = {
             chunks: ['reader'],
             inject: 'body'
         }),
+        new HtmlWebpackPlugin({
+            template: './src/popup/popup.html',
+            filename: 'popup.html',
+            chunks: ['popup'],
+            inject: 'body'
+        }),
         //new HtmlWebpackPugPlugin({
         //
         //}),
@@ -157,6 +167,10 @@ const config = {
                 {
                     from: 'src/reader/reader.css',
                     to: 'reader.css'
+                },
+                {
+                    from: 'src/popup/popup.css',
+                    to: 'popup.css'
                 }
             ]
         }),

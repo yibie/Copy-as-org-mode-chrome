@@ -25,7 +25,7 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-import { MyMsg, SavedPage, msgManager } from "./common";
+import { MyMsg, PAGE_ACTIONS, SavedPage, isPageAction, isScriptableUrl, msgManager, page_action_t } from "./common";
 import { exceptionSafeDecodeURI } from "./html2org/utilities";
 import { CopyAsOrgModeOptions, objectAssignPerfectly, storageManager } from "./options";
 import { Readability } from '@mozilla/readability';
@@ -126,9 +126,7 @@ async function waitForTabLoaded(tabId: number): Promise<void> {
 async function canExecuteScript(tabId: number): Promise<boolean> {
   try {
     const tab = await chrome.tabs.get(tabId);
-    // 检查 URL 是否是允许的
-    const url = tab.url || '';
-    return url.startsWith('http') || url.startsWith('https');
+    return isScriptableUrl(tab.url);
   } catch (err: unknown) {
     console.error('Error checking tab:', err);
     return false;
@@ -150,135 +148,87 @@ async function copySelectionAsOrgMode(tabId: number): Promise<void> {
   });
 }
 
-// 修改处理函数
+/** Shared by the context menu, keyboard commands and the toolbar popup */
+async function runPageAction(action: page_action_t, tab: chrome.tabs.Tab | undefined): Promise<void> {
+  const title = PAGE_ACTIONS.find((a) => a.id === action)!.title;
+  try {
+    if (tab?.id === undefined) {
+      throw new Error('No active tab found');
+    }
+    if (!await canExecuteScript(tab.id)) {
+      throw new Error('Cannot execute script on this page');
+    }
+    switch (action) {
+      case 'copy-selection-as-org-mode': return await copySelectionAsOrgMode(tab.id);
+      case 'copy-current-page-url-as-org-mode': return await copyPageLinkAsOrgMode(tab);
+      case 'save-page-as-org': return await savePageAsOrg(tab.id);
+      case 'save-page-as-org-folder': return await savePageAsOrgFolder(tab.id);
+      case 'toggle-reader-mode': return await toggleReaderMode(tab);
+    }
+  } catch (err: unknown) {
+    console.error(`[runPageAction] ${action} failed:`, err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    showBgNotification('Error', `${title} failed: ${errorMessage}`);
+  }
+}
+
+async function copyPageLinkAsOrgMode(tab: chrome.tabs.Tab): Promise<void> {
+  if (!tab.url || !tab.title) {
+    throw new Error('Cannot get page information');
+  }
+  await bgCopyToClipboard(`[[${tab.url}][${tab.title}]]`, `<a href="${tab.url}">${tab.title}</a>`);
+}
+
+async function copyLinkAsOrgMode(info: chrome.contextMenus.OnClickData, tabId: number): Promise<void> {
+  try {
+    if (!await canExecuteScript(tabId)) {
+      throw new Error('Cannot execute script on this page');
+    }
+    await chrome.scripting.executeScript({
+      target: { tabId: tabId },
+      files: ["dist/copy-link.js"]
+    });
+
+    const linkInfo = info as chrome.contextMenus.OnClickData & {
+      linkText: string;
+      linkUrl: string;
+    };
+
+    if (!linkInfo.linkText || !linkInfo.linkUrl) {
+      throw new TypeError('Missing link information');
+    }
+
+    const linkText = linkInfo.linkText.replace(/([\\`*_[\]<>])/g, "\\$1")
+    let linkUrl = linkInfo.linkUrl
+
+    console.log('Options ===>', STORAGE)
+    if (STORAGE.decodeUri) {
+      linkUrl = exceptionSafeDecodeURI(linkUrl)
+    }
+    bgCopyToClipboard(`[[${linkUrl}][${linkText}]]`, `<a href="${linkUrl}">${linkText}</a>`)
+  } catch (err: unknown) {
+    console.error('Failed to process link:', err);
+    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+    showBgNotification('Error', `Failed to copy link: ${errorMessage}`);
+  }
+}
+
 chrome.contextMenus.onClicked.addListener(async (info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) => {
   if (!tab?.id) return;
-  const tabId = tab.id;
-
-  // 检查是否可以执行脚本
-  if (!await canExecuteScript(tabId)) {
-    showBgNotification('Error', 'Cannot execute script on this page');
-    return;
-  }
-
-  if (info.menuItemId === "save-page-as-org") {
-    try {
-      await savePageAsOrg(tabId);
-    } catch (err: unknown) {
-      console.error('Failed to execute script:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      showBgNotification('Error', `Failed to process page content: ${errorMessage}`);
-    }
-  } else if (info.menuItemId === "save-page-as-org-folder") {
-    try {
-      await savePageAsOrgFolder(tabId);
-    } catch (err: unknown) {
-      console.error('Failed to execute script:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      showBgNotification('Error', `Failed to process page content: ${errorMessage}`);
-    }
-  } else if (info.menuItemId === "copy-current-page-url-as-org-mode") {
-    try {
-      // 获取当前页面信息
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab.url || !tab.title) {
-        throw new Error('Cannot get page information');
-      }
-
-      // 构建 org-mode 链接
-      const orgLink = `[[${tab.url}][${tab.title}]]`;
-
-      // 复制到剪贴板
-      await bgCopyToClipboard(orgLink, `<a href="${tab.url}">${tab.title}</a>`);
-    } catch (err) {
-      console.error('Failed to copy page link:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      showBgNotification('Error', `Failed to copy page link: ${errorMessage}`);
-    }
-  } else if (info.menuItemId === "copy-selection-as-org-mode") {
-    try {
-      await copySelectionAsOrgMode(tabId);
-    } catch (err) {
-      console.error('Failed to copy selection:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      showBgNotification('Error', `Failed to copy selection: ${errorMessage}`);
-    }
-  } else if (info.menuItemId === "copy-link-as-org-mode") {
-    try {
-      await chrome.scripting.executeScript({
-        target: { tabId: tabId },
-        files: ["dist/copy-link.js"]
-      });
-
-      const linkInfo = info as chrome.contextMenus.OnClickData & {
-        linkText: string;
-        linkUrl: string;
-      };
-
-      if (!linkInfo.linkText || !linkInfo.linkUrl) {
-        throw new TypeError('Missing link information');
-      }
-
-      const linkText = linkInfo.linkText.replace(/([\\`*_[\]<>])/g, "\\$1")
-      let linkUrl = linkInfo.linkUrl
-
-      console.log('Options ===>', STORAGE)
-      if (STORAGE.decodeUri) {
-        linkUrl = exceptionSafeDecodeURI(linkUrl)
-      }
-      bgCopyToClipboard(`[[${linkUrl}][${linkText}]]`, `<a href="${linkUrl}">${linkText}</a>`)
-    } catch (err: unknown) {
-      console.error('Failed to process link:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      showBgNotification('Error', `Failed to copy link: ${errorMessage}`);
-    }
-  } else if (info.menuItemId === "toggle-reader-mode") {
-    try {
-      await toggleReaderMode(tab);
-    } catch (err) {
-      console.error('Failed to toggle reader mode:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      showBgNotification('Error', `Failed to toggle reader mode: ${errorMessage}`);
-    }
+  if (info.menuItemId === "copy-link-as-org-mode") {
+    await copyLinkAsOrgMode(info, tab.id);
+  } else if (isPageAction(info.menuItemId)) {
+    await runPageAction(info.menuItemId, tab);
   }
 })
 
 chrome.commands.onCommand.addListener(async (command) => {
-  if (command === "copy-selection-as-org-mode") {
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab?.id) {
-        throw new Error('No active tab found');
-      }
-      if (!await canExecuteScript(tab.id)) {
-        throw new Error('Cannot execute script on this page');
-      }
-      await copySelectionAsOrgMode(tab.id);
-    } catch (err) {
-      console.error('Failed to copy selection via command:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      showBgNotification('Error', `Failed to copy selection: ${errorMessage}`);
-    }
-  } else if (command === "toggle-reader-mode") {
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      await toggleReaderMode(tab);
-    } catch (err) {
-      console.error('Failed to toggle reader mode via command:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-      showBgNotification('Error', `Failed to toggle reader mode: ${errorMessage}`);
-    }
-  }
+  if (!isPageAction(command)) return;
+  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  await runPageAction(command, tab);
 });
 
-chrome.action.onClicked.addListener((tab) => {
-  console.log('[DEBUG] browserAction.onclicked', tab)
-  chrome.scripting.executeScript({
-    target: { tabId: tab.id ?? -1 },
-    files: ["dist/copy.js"]
-  })
-})
-
+// The toolbar icon opens dist/popup.html (manifest `action.default_popup`), so there is no action.onClicked.
 
 chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
   const message = msg as MyMsg;
@@ -302,6 +252,13 @@ chrome.runtime.onMessage.addListener((msg: any, sender, sendResponse) => {
     }
     case 'savePageAsOrgFolder': {
       if (sender.tab?.id !== undefined) { savePageAsOrgFolder(sender.tab.id, message.page) }
+      break;
+    }
+    case 'runPageAction': {
+      // Answer first: the popup closes on the reply, and the action may outlive it
+      sendResponse({ ok: true });
+      chrome.tabs.get(message.tabId)
+        .then((tab) => runPageAction(message.action, tab), (err) => console.error('[runPageAction]', err));
       break;
     }
     case 'getReaderArticle': {

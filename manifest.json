@@ -8,7 +8,8 @@
     },
     "action": {
         "default_icon": "img/icon.png",
-        "default_title": "Copy as Org-mode"
+        "default_title": "Copy as Org-mode",
+        "default_popup": "dist/popup.html"
     },
     "options_ui": {
         "page": "dist/options_ui.html",

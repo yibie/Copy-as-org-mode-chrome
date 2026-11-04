@@ -18,6 +18,11 @@ You trigger it from the right‑click context menu. Five operations:
 | *Copy Link as Org-Mode* | Right‑click a hyperlink | =[[url][text]]= in clipboard |
 | *Copy Page URL as Org-Mode Link* | Right‑click the page background | =[[url][title]]= in clipboard |
 
+Click the extension's toolbar icon for the same page actions in a menu: Copy
+Selection, Copy Page as Org-Mode Link, both Save options, Reader View, and
+Options. On pages where the extension cannot run (=chrome://= pages, the Web
+Store), the page actions are greyed out.
+
 A keyboard shortcut (~Ctrl+Alt+O~) is also available for "Copy Selection".
 
 ** Reader View with Highlights
@@ -166,7 +171,7 @@ Plus an intelligently named file:
 
 ** Settings
 
-Open the extension options page (right‑click the extension icon → Options).
+Open the extension options page (click the extension icon → Options…, or right‑click the icon → Options).
 
 | Setting | Description |
 |---------+-------------|

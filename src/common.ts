@@ -12,7 +12,26 @@
  * remedy known factual inaccuracies. (Cited from MPL - 2.0, chapter 3.3)
  */
 
-export type my_msg_t = 'showBgNotification' | 'showInPageNotification' | 'copyStringToClipboard' | 'toggleReaderMode' | 'savePageAsOrg' | 'savePageAsOrgFolder' | 'getReaderArticle'
+export type my_msg_t = 'showBgNotification' | 'showInPageNotification' | 'copyStringToClipboard' | 'toggleReaderMode' | 'savePageAsOrg' | 'savePageAsOrgFolder' | 'getReaderArticle' | 'runPageAction'
+
+/** Actions on the active tab. The ids double as context menu and command ids. */
+export const PAGE_ACTIONS = [
+    { id: 'copy-selection-as-org-mode', title: 'Copy Selection as Org-Mode' },
+    { id: 'copy-current-page-url-as-org-mode', title: 'Copy Page as Org-Mode Link' },
+    { id: 'save-page-as-org', title: 'Save Page as Org-Mode' },
+    { id: 'save-page-as-org-folder', title: 'Save Page as Org-Mode (With Images)' },
+    { id: 'toggle-reader-mode', title: 'Reader View' },
+] as const
+export type page_action_t = typeof PAGE_ACTIONS[number]['id']
+
+export function isPageAction(id: unknown): id is page_action_t {
+    return PAGE_ACTIONS.some((a) => a.id === id)
+}
+
+/** Scripts can only be injected into web pages */
+export function isScriptableUrl(url: string | undefined): boolean {
+    return /^https?:/.test(url ?? '')
+}
 export interface MyMsg_ShowNotification {
     type: 'showBgNotification' | 'showInPageNotification',
     title: string
@@ -47,13 +66,20 @@ export interface MyMsg_SavePageAsOrgFolder {
 export interface MyMsg_GetReaderArticle {
     type: 'getReaderArticle'
 }
+/** From the toolbar popup; the background runs it on the active tab */
+export interface MyMsg_RunPageAction {
+    type: 'runPageAction'
+    action: page_action_t
+    tabId: number
+}
 export type MyMsg =
     MyMsg_ShowNotification |
     MyMsg_CopyStringToClipboard |
     MyMsg_ToggleReaderMode |
     MyMsg_SavePageAsOrg |
     MyMsg_SavePageAsOrgFolder |
-    MyMsg_GetReaderArticle
+    MyMsg_GetReaderArticle |
+    MyMsg_RunPageAction
 export class msgManager {
     static sendToTab<T extends MyMsg>(tabId: number, msg: T) {
         return chrome.tabs.sendMessage(tabId, msg) as Promise<T | void>

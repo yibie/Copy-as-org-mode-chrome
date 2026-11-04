@@ -1,5 +1,6 @@
 # CHANGE Index
 
+- 2026-11-03 · DONE-phase-reader-highlight-20261021 · task017 工具栏图标弹出菜单（issue005） → `../phases/DONE-phase-reader-highlight-20261021/DONE-CHANGE-reader-highlight_20261021.md`
 - 2026-10-29 · DONE-phase-reader-highlight-20261021 · task016 Save (with images) 存储配额超限（issue004） → `../phases/DONE-phase-reader-highlight-20261021/DONE-CHANGE-reader-highlight_20261021.md`
 - 2026-10-29 · DONE-phase-reader-highlight-20261021 · task015 Save (with images) 记住上次的文件夹（issue003） → `../phases/DONE-phase-reader-highlight-20261021/DONE-CHANGE-reader-highlight_20261021.md`
 - 2026-10-26 · DONE-phase-reader-highlight-20261021 · task010 README 与版本号 1.6.0 → `../phases/DONE-phase-reader-highlight-20261021/DONE-CHANGE-reader-highlight_20261021.md`
