@@ -203,7 +203,7 @@ both the Org file and the images folder.
 
 ** Installation
 
-1. Download =copy-as-org-mode-v1.6.1.zip= from the [[https://github.com/yibie/Copy-as-org-mode-chrome/releases][Releases page]].
+1. Download =copy-as-org-mode-v1.6.2.zip= from the [[https://github.com/yibie/Copy-as-org-mode-chrome/releases][Releases page]].
 2. Unzip it.
 3. Open Chrome → go to =chrome://extensions=.
 4. Enable *Developer mode* (toggle in the top‑right).
