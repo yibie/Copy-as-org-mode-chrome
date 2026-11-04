@@ -7,7 +7,8 @@
 - Modify `src/background.ts`：新增 `runPageAction`（统一检查标签页、执行、出错通知）、`copyPageLinkAsOrgMode`、`copyLinkAsOrgMode`（从右键菜单处理函数中拆出）；`contextMenus.onClicked` 和 `commands.onCommand` 改为调用 `runPageAction`；新增 `runPageAction` 消息（先回复再执行，操作不受弹出菜单关闭影响）；删除 `chrome.action.onClicked`（设了 `default_popup` 后不再触发，原来只注入 `copy.js` 而不调用 `main()`，点击无效果）；`canExecuteScript` 改用 `isScriptableUrl`。
 - Modify `webpack.config.js`：新增 `popup` 入口、`popup.html`、复制 `popup.css`。Modify `manifest.json`：`action.default_popup: "dist/popup.html"`。
 - Modify `README.org`：What It Does 增加工具栏菜单说明；Settings 打开方式补“点击图标 → Options…”。
-- 验证：`npm run build` 通过，`npm test` 72 pass（弹出菜单和 background 胶水无单元测试）。Chrome 正式版不支持命令行加载未打包扩展，未做自动化浏览器验证；待用户手动确认。
+- 验证：`npm run build` 通过，`npm test` 72 pass（弹出菜单和 background 胶水无单元测试）。Chrome 正式版不支持命令行加载未打包扩展，未做自动化浏览器验证；2026-11-03 用户在浏览器中手动确认通过。
+- 发布：版本 1.6.1 → 1.6.2（`package.json`、`manifest.json`、README Changelog）。
 - 行为变化 / 风险：出错通知文案统一为 `<操作名> failed: <原因>`（原来各项文案不同）。快捷键 Reader View 在不能注入的页面上现在会弹出错误通知（原来静默忽略）。Copy 两项从弹出菜单触发时，复制在网页标签页里用 `execCommand('copy')` 完成，此时弹出菜单已关闭；若复制失败需改为在弹出菜单内写剪贴板。
 
 ## 2026-10-29 · task016

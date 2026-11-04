@@ -1,4 +1,4 @@
-# issue005 [ ] 点击工具栏图标没有任何选项
+# issue005 [x] 点击工具栏图标没有任何选项
 
 ## Summary
 用户反馈：点击浏览器工具栏上的扩展图标后什么都不出现。应该弹出菜单，列出可用的操作。
@@ -27,10 +27,10 @@ copy-as-org-mode 1.6.1，Chrome。
 
 ## Verification
 - `npm run build` 通过，`npm test` 72 pass。
-- 待用户在浏览器中手动确认（见 task017 的手动步骤）。
+- 2026-11-03 用户在浏览器中确认通过。
 
 ## User Confirmation
-待确认。
+已确认（2026-11-03）。
 
 ## Resolved At/By/Commit
-—
+2026-11-03 / yibie / 686060f
