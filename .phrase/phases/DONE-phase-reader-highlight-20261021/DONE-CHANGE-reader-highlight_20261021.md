@@ -9,6 +9,7 @@
 - Modify `README.org`：What It Does 增加工具栏菜单说明；Settings 打开方式补“点击图标 → Options…”。
 - 验证：`npm run build` 通过，`npm test` 72 pass（弹出菜单和 background 胶水无单元测试）。Chrome 正式版不支持命令行加载未打包扩展，未做自动化浏览器验证；2026-11-03 用户在浏览器中手动确认通过。
 - 发布：版本 1.6.1 → 1.6.2（`package.json`、`manifest.json`、README Changelog）。
+- 发布：2026-11-03 GitHub Release `v1.6.2`（含 task017），附 `copy-as-org-mode-v1.6.2.zip`。
 - 行为变化 / 风险：出错通知文案统一为 `<操作名> failed: <原因>`（原来各项文案不同）。快捷键 Reader View 在不能注入的页面上现在会弹出错误通知（原来静默忽略）。Copy 两项从弹出菜单触发时，复制在网页标签页里用 `execCommand('copy')` 完成，此时弹出菜单已关闭；若复制失败需改为在弹出菜单内写剪贴板。
 
 ## 2026-10-29 · task016
